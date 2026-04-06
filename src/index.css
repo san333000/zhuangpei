@@ -1,8 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+  --color-cream: #FAF9F6;
+  --color-champagne: #D4AF37;
+  --color-champagne-light: #F4E8C8;
+  --color-charcoal: #2C2C2C;
+  --color-ash: #8E8E8E;
 }
 
 @layer utilities {
@@ -13,8 +19,11 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .luxury-shadow {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  }
 }
 
 body {
-  @apply antialiased text-gray-900 bg-gray-50;
+  @apply antialiased text-charcoal bg-cream font-sans;
 }
