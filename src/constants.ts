@@ -30,10 +30,20 @@ export const MOCK_MUAS: MUA[] = [
     styles: ['Modern Glam', 'Soft Matte'],
     portfolio: [
       'https://images.unsplash.com/photo-1522673607200-164883eecd4c?w=800&q=80',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80',
+      'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
     ],
     bio: 'Creating timeless, editorial-worthy bridal looks.',
     services: [
-      { id: 's3', name: 'Bridal Trial', price: 399, description: 'In-studio consultation and trial.', duration: '2 hrs' },
+      { 
+        id: 's3', 
+        name: 'Bridal Trial', 
+        price: 399, 
+        description: 'In-studio consultation and trial.', 
+        duration: '2 hrs',
+        materialsUsed: 'Charlotte Tilbury, Tom Ford Beauty, Armani Luminous Silk',
+        stylingNotes: 'Focus on skin prep and finding the perfect undertone match. Please arrive with a clean, moisturized face.'
+      },
     ]
   }
 ];
@@ -41,47 +51,76 @@ export const MOCK_MUAS: MUA[] = [
 export const MOCK_CHECKLIST: ChecklistCategory[] = [
   {
     id: 'c1',
-    title: '6 Months Before (提前6个月)',
+    title: '订婚阶段 (Engagement)',
     tasks: [
-      { id: 't1', title: 'Determine makeup style & budget (确定妆造风格与预算)', assignee: 'Bride', completed: true },
-      { id: 't2', title: 'Research & shortlist Makeup Artists (筛选备选化妆师)', assignee: 'Bride', completed: true },
-      { id: 't3', title: 'Book MUA for trial (预约试妆)', assignee: 'Bride', completed: false },
+      { id: 't1_1', title: '商议聘礼嫁妆', subCategory: '准备事项', completed: true },
+      { id: 't1_2', title: '确定时间地点', subCategory: '准备事项', completed: true },
+      { id: 't1_3', title: '邀请媒人宾客', subCategory: '准备事项', completed: true },
+      { id: 't1_4', title: '男方：彩礼、三金、六样礼', subCategory: '物品清单', completed: true },
+      { id: 't1_5', title: '女方：回礼、男方服饰', subCategory: '物品清单', completed: true },
+      { id: 't1_6', title: '通用：订婚书、喜糖、布置用品', subCategory: '物品清单', completed: false },
+      { id: 't1_7', title: '送聘礼、签婚书', subCategory: '仪式流程', completed: false },
+      { id: 't1_8', title: '敬茶改口', subCategory: '仪式流程', completed: false },
+      { id: 't1_9', title: '订婚宴致辞', subCategory: '仪式流程', completed: false },
     ]
   },
   {
     id: 'c2',
-    title: '3 Months Before (提前3个月)',
+    title: '婚礼筹备 (Wedding Prep)',
     tasks: [
-      { id: 't4', title: 'Attend makeup trial (进行试妆)', assignee: 'Bride', completed: false },
-      { id: 't5', title: 'Sign contract & pay deposit (签订合同并支付定金)', assignee: 'Bride', completed: false },
-      { id: 't6', title: 'Start intensive skincare routine (开始密集护肤)', assignee: 'Bride', completed: false },
+      { id: 't2_1', title: '婚期与预算', subCategory: '核心确定', completed: false },
+      { id: 't2_2', title: '酒店场地', subCategory: '核心确定', completed: false },
+      { id: 't2_3', title: '婚礼策划', subCategory: '核心确定', completed: false },
+      { id: 't2_4', title: '四大金刚：摄影、摄像、司仪、化妆', subCategory: '核心确定', completed: false },
+      { id: 't2_5', title: '婚纱照拍摄', subCategory: '形象准备', completed: false },
+      { id: 't2_6', title: '婚纱礼服定制/租赁', subCategory: '形象准备', completed: false },
+      { id: 't2_7', title: '新郎西装定制', subCategory: '形象准备', completed: false },
+      { id: 't2_8', title: '钻戒对戒购买', subCategory: '形象准备', completed: false },
+      { id: 't2_9', title: '拟定名单与请柬', subCategory: '宾客与帮忙', completed: false },
+      { id: 't2_10', title: '确定伴郎伴娘', subCategory: '宾客与帮忙', completed: false },
+      { id: 't2_11', title: '统筹、礼炮、财务等人员分工', subCategory: '宾客与帮忙', completed: false },
     ]
   },
   {
     id: 'c3',
-    title: '1 Month Before (提前1个月)',
+    title: '婚礼前夕 (Eve of Wedding)',
     tasks: [
-      { id: 't7', title: 'Finalize wedding day timeline with MUA (与化妆师确认当天时间表)', assignee: 'Bride', completed: false },
-      { id: 't8', title: 'Hair color & trim (染发与修剪)', assignee: 'Bride', completed: false },
-      { id: 't9', title: 'Confirm bridesmaid makeup needs (确认伴娘妆造需求)', assignee: 'Bride', completed: false },
+      { id: 't3_1', title: '最终流程走位彩排', subCategory: '事项确认', completed: false },
+      { id: 't3_2', title: '确认婚车路线', subCategory: '事项确认', completed: false },
+      { id: 't3_3', title: '准备誓言与发言稿', subCategory: '事项确认', completed: false },
+      { id: 't3_4', title: '美甲、脱毛、皮肤补水', subCategory: '个人护理', completed: false },
+      { id: 't3_5', title: '理发、试穿鞋服', subCategory: '个人护理', completed: false },
+      { id: 't3_6', title: '换新钞、封红包', subCategory: '物品分装', completed: false },
+      { id: 't3_7', title: '准备新娘急救包', subCategory: '物品分装', completed: false },
+      { id: 't3_8', title: '装饰婚房、贴囍字', subCategory: '物品分装', completed: false },
     ]
   },
   {
     id: 'c4',
-    title: '1 Week Before (提前1周)',
+    title: '婚礼当天 (Wedding Day)',
     tasks: [
-      { id: 't10', title: 'Confirm final details & location (确认最终细节与地点)', assignee: 'Bride', completed: false },
-      { id: 't11', title: 'Prepare emergency touch-up kit (准备补妆急救包)', assignee: 'Maid of Honor', completed: false },
-      { id: 't12', title: 'Lash extensions/lift (睫毛嫁接/护理)', assignee: 'Bride', completed: false },
+      { id: 't4_1', title: '新娘化妆、晨袍拍摄', subCategory: '接亲迎亲', completed: false },
+      { id: 't4_2', title: '堵门游戏、找婚鞋', subCategory: '接亲迎亲', completed: false },
+      { id: 't4_3', title: '敬茶改口、吃饺子汤圆', subCategory: '接亲迎亲', completed: false },
+      { id: 't4_4', title: '新人及伴郎伴娘合影', subCategory: '外景与仪式', completed: false },
+      { id: 't4_5', title: 'First Look', subCategory: '外景与仪式', completed: false },
+      { id: 't4_6', title: '入场、宣誓、交换戒指', subCategory: '外景与仪式', completed: false },
+      { id: 't4_7', title: '感恩父母、抛捧花', subCategory: '外景与仪式', completed: false },
+      { id: 't4_8', title: '换敬酒服', subCategory: '晚宴敬酒', completed: false },
+      { id: 't4_9', title: '轮桌敬酒', subCategory: '晚宴敬酒', completed: false },
+      { id: 't4_10', title: '宾客互动游戏', subCategory: '晚宴敬酒', completed: false },
     ]
   },
   {
     id: 'c5',
-    title: 'Wedding Day (婚礼当天)',
+    title: '后期收尾 (Post-Wedding)',
     tasks: [
-      { id: 't13', title: 'Wash hair (no conditioner) (洗头，不使用护发素)', assignee: 'Bride', completed: false },
-      { id: 't14', title: 'Wear button-down shirt (穿开衫/纽扣衬衫)', assignee: 'Bride', completed: false },
-      { id: 't15', title: 'Prepare payment balance (准备尾款)', assignee: 'Groom', completed: false },
+      { id: 't5_1', title: '酒店/婚庆尾款', subCategory: '当日结算', completed: false },
+      { id: 't5_2', title: '清点物品、饭菜打包', subCategory: '当日结算', completed: false },
+      { id: 't5_3', title: '回门宴(婚后3-9天)', subCategory: '婚后事项', completed: false },
+      { id: 't5_4', title: '归还礼服', subCategory: '婚后事项', completed: false },
+      { id: 't5_5', title: '领取影像资料', subCategory: '婚后事项', completed: false },
+      { id: 't5_6', title: '蜜月旅行', subCategory: '婚后事项', completed: false },
     ]
   }
 ];

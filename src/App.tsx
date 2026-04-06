@@ -1,14 +1,15 @@
-import { useState, ReactNode } from 'react';
+import React, { useState, ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
   Plus, ChevronDown, ChevronUp, Search, Settings, Heart, LogOut, Phone,
-  ChevronRight, Star, Users, Image as ImageIcon
+  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
+import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen } from './newScreens';
 
 // --- Shared Components ---
 
@@ -140,7 +141,7 @@ const HomeScreen = () => {
         </div>
         <div className="flex gap-5 overflow-x-auto px-6 pb-8 no-scrollbar">
           {MOCK_MUAS.map(mua => (
-            <div key={mua.id} className="w-64 flex-shrink-0">
+            <div key={mua.id} className="w-64 flex-shrink-0 cursor-pointer active:scale-[0.98] transition-transform" onClick={() => navigate(`/artist/${mua.id}`)}>
               <div className="h-80 rounded-[24px] overflow-hidden mb-4 luxury-shadow">
                 <img src={mua.portfolio[0]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               </div>
@@ -180,9 +181,38 @@ const HomeScreen = () => {
 const ChecklistScreen = () => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>('c1');
+  const [checklist, setChecklist] = useState(MOCK_CHECKLIST);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  const [tempHiddenCategories, setTempHiddenCategories] = useState<string[]>([]);
 
-  const totalTasks = MOCK_CHECKLIST.reduce((acc, cat) => acc + cat.tasks.length, 0);
-  const completedTasks = MOCK_CHECKLIST.reduce((acc, cat) => acc + cat.tasks.filter(t => t.completed).length, 0);
+  const openPlanModal = () => {
+    setTempHiddenCategories(hiddenCategories);
+    setIsPlanModalOpen(true);
+  };
+
+  const savePlan = () => {
+    setHiddenCategories(tempHiddenCategories);
+    setIsPlanModalOpen(false);
+  };
+
+  const toggleTask = (categoryId: string, taskId: string) => {
+    setChecklist(prev => prev.map(cat => {
+      if (cat.id === categoryId) {
+        return {
+          ...cat,
+          tasks: cat.tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t)
+        };
+      }
+      return cat;
+    }));
+  };
+
+  const visibleChecklist = checklist.filter(cat => !hiddenCategories.includes(cat.id));
+
+  const totalTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.length, 0);
+  const completedTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.filter(t => t.completed).length, 0);
   const progressPercentage = Math.round((completedTasks / totalTasks) * 100);
   const strokeDashoffset = 283 - (283 * progressPercentage) / 100;
 
@@ -208,28 +238,49 @@ const ChecklistScreen = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="flex gap-4 mb-10">
-          <button className="flex-1 bg-[#D4AF37] text-white py-3.5 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-[#D4AF37]/20">Auto-Plan</button>
-          <button onClick={() => navigate('/home')} className="flex-1 border border-[#D4AF37] text-[#D4AF37] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase">Find Artist</button>
+        <div className="flex flex-col gap-3 mb-10">
+          <div className="flex gap-3">
+            <button onClick={() => alert('Auto-Plan feature coming soon!')} className="flex-1 bg-[#D4AF37] text-white py-3.5 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-[#D4AF37]/20 active:scale-95 transition-all">Auto-Plan</button>
+            <button onClick={() => navigate('/home')} className="flex-1 border border-[#D4AF37] text-[#D4AF37] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase active:scale-95 transition-all">Find Artist</button>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={() => setIsDateModalOpen(true)} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
+              <Calendar size={14} className="text-[#D4AF37]" /> Customize Date
+            </button>
+            <button onClick={openPlanModal} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
+              <Settings size={14} className="text-[#D4AF37]" /> Customize Plan
+            </button>
+          </div>
         </div>
 
         {/* Accordions */}
-        <div className="space-y-4">
-          {MOCK_CHECKLIST.map(category => {
+        <div className="space-y-5">
+          {visibleChecklist.map(category => {
             const isExpanded = expandedId === category.id;
             const completedCount = category.tasks.filter(t => t.completed).length;
+            const progress = Math.round((completedCount / category.tasks.length) * 100);
             
             return (
-              <div key={category.id} className="bg-white rounded-[24px] luxury-shadow overflow-hidden transition-all duration-300">
+              <div key={category.id} className="bg-white rounded-[28px] luxury-shadow overflow-hidden transition-all duration-300 border border-gray-50/50">
                 <button 
                   onClick={() => setExpandedId(isExpanded ? null : category.id)}
-                  className="w-full px-6 py-5 flex items-center justify-between"
+                  className="w-full px-7 py-6 flex items-center justify-between group"
                 >
-                  <div className="flex flex-col items-start">
-                    <span className="font-serif text-lg text-[#2C2C2C]">{category.title}</span>
-                    <span className="text-xs text-[#8E8E8E] mt-1">{completedCount}/{category.tasks.length} Done</span>
+                  <div className="flex flex-col items-start flex-1 pr-6">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <span className="font-serif text-[19px] text-[#2C2C2C] group-hover:text-[#D4AF37] transition-colors">{category.title}</span>
+                      <span className="text-xs font-semibold text-[#8E8E8E] bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100/80">{completedCount}/{category.tasks.length}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[#D4AF37] to-[#F4E8C8] transition-all duration-700 ease-out rounded-full" 
+                        style={{ width: `${progress}%` }} 
+                      />
+                    </div>
                   </div>
-                  {isExpanded ? <ChevronUp size={20} className="text-[#8E8E8E]" /> : <ChevronDown size={20} className="text-[#8E8E8E]" />}
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-[#8E8E8E] group-hover:bg-[#F4E8C8]/50 group-hover:text-[#D4AF37] transition-colors shrink-0">
+                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
                 </button>
                 
                 <AnimatePresence>
@@ -238,21 +289,67 @@ const ChecklistScreen = () => {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="px-6 pb-6 space-y-4"
+                      className="px-7 pb-7 space-y-5"
                     >
-                      {category.tasks.map(task => (
-                        <div key={task.id} className="flex items-start gap-4 group cursor-pointer">
-                          <div className={cn(
-                            "w-5 h-5 rounded-full border flex items-center justify-center mt-0.5 transition-colors",
-                            task.completed ? "bg-[#D4AF37] border-[#D4AF37] text-white" : "border-[#8E8E8E]/50"
-                          )}>
-                            {task.completed && <CheckCircle2 size={14} />}
-                          </div>
-                          <div>
-                            <p className={cn("text-sm transition-colors", task.completed ? "text-[#8E8E8E] line-through" : "text-[#2C2C2C]")}>{task.title}</p>
-                            {task.assignee && (
-                              <p className="text-[10px] text-[#8E8E8E] mt-1 tracking-wide uppercase">Assign to: {task.assignee}</p>
-                            )}
+                      {Object.entries(
+                        category.tasks.reduce((acc, task) => {
+                          const sub = task.subCategory || 'Other';
+                          if (!acc[sub]) acc[sub] = [];
+                          acc[sub].push(task);
+                          return acc;
+                        }, {} as Record<string, typeof category.tasks>)
+                      ).map(([subCat, tasks]: [string, any]) => (
+                        <div key={subCat} className="mb-5 last:mb-0">
+                          <h4 className="text-[11px] font-bold text-[#8E8E8E] uppercase tracking-widest mb-4 pl-3 border-l-2 border-[#D4AF37]">{subCat}</h4>
+                          <div className="space-y-3.5">
+                            {tasks.map(task => (
+                              <div 
+                                key={task.id} 
+                                onClick={() => toggleTask(category.id, task.id)}
+                                className={cn(
+                                "flex items-start gap-4 group cursor-pointer p-4 rounded-[20px] transition-all duration-300 border active:scale-[0.98]",
+                                task.completed 
+                                  ? "bg-gray-50/80 border-transparent opacity-70" 
+                                  : "bg-white border-gray-100 hover:border-[#D4AF37]/40 hover:shadow-lg hover:shadow-[#D4AF37]/5"
+                              )}>
+                                <div className={cn(
+                                  "w-6 h-6 rounded-full border-[2.5px] flex items-center justify-center mt-0.5 transition-all duration-300 shrink-0",
+                                  task.completed 
+                                    ? "bg-[#D4AF37] border-[#D4AF37] text-white scale-95" 
+                                    : "border-gray-200 group-hover:border-[#D4AF37]"
+                                )}>
+                                  <motion.div
+                                    initial={false}
+                                    animate={{ scale: task.completed ? 1 : 0, opacity: task.completed ? 1 : 0 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                  >
+                                    <CheckCircle2 size={14} strokeWidth={3} />
+                                  </motion.div>
+                                </div>
+                                <div className="flex-1 pt-0.5">
+                                  <p className={cn(
+                                    "text-[15px] font-medium transition-all duration-300 leading-snug", 
+                                    task.completed ? "text-gray-400 line-through decoration-gray-300/80" : "text-[#2C2C2C] group-hover:text-[#D4AF37]"
+                                  )}>{task.title}</p>
+                                  {task.assignee && (
+                                    <div className="flex items-center gap-2 mt-3">
+                                      <div className={cn(
+                                        "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm",
+                                        task.assignee === 'Bride' ? "bg-gradient-to-br from-pink-300 to-pink-400" : 
+                                        task.assignee === 'Groom' ? "bg-gradient-to-br from-blue-300 to-blue-400" : 
+                                        "bg-gradient-to-br from-purple-300 to-purple-400"
+                                      )}>
+                                        {task.assignee.charAt(0)}
+                                      </div>
+                                      <p className={cn(
+                                        "text-[10px] tracking-widest uppercase font-semibold",
+                                        task.completed ? "text-gray-400" : "text-[#8E8E8E]"
+                                      )}>{task.assignee}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
@@ -264,17 +361,115 @@ const ChecklistScreen = () => {
           })}
         </div>
       </div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {isDateModalOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+              onClick={() => setIsDateModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 pb-12 z-[60] max-w-md mx-auto"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Customize Date</h3>
+                <button onClick={() => setIsDateModalOpen(false)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C]"><X size={20} /></button>
+              </div>
+              <p className="text-sm text-[#8E8E8E] mb-6">Select your new wedding date to recalculate your timeline.</p>
+              <input type="date" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] mb-6" />
+              <button onClick={() => setIsDateModalOpen(false)} className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30">Save Date</button>
+            </motion.div>
+          </>
+        )}
+
+        {isPlanModalOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]"
+              onClick={() => setIsPlanModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 pb-12 z-[60] max-w-md mx-auto max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Customize Plan</h3>
+                <button onClick={() => setIsPlanModalOpen(false)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C]"><X size={20} /></button>
+              </div>
+              <p className="text-sm text-[#8E8E8E] mb-6">Add or remove phases from your wedding checklist.</p>
+              
+              <div className="space-y-3 mb-8">
+                {checklist.map(cat => {
+                  const isHidden = tempHiddenCategories.includes(cat.id);
+                  return (
+                    <div 
+                      key={cat.id} 
+                      onClick={() => {
+                        if (isHidden) {
+                          setTempHiddenCategories(prev => prev.filter(id => id !== cat.id));
+                        } else {
+                          setTempHiddenCategories(prev => [...prev, cat.id]);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all active:scale-[0.98]",
+                        isHidden ? "border-gray-100 bg-gray-50/50" : "border-[#D4AF37]/30 bg-white"
+                      )}
+                    >
+                      <span className={cn(
+                        "font-medium transition-colors",
+                        isHidden ? "text-[#8E8E8E]" : "text-[#2C2C2C]"
+                      )}>{cat.title}</span>
+                      <div className={cn(
+                        "w-5 h-5 rounded border flex items-center justify-center transition-colors",
+                        isHidden ? "border-gray-300 bg-transparent" : "border-[#D4AF37] bg-[#D4AF37] text-white"
+                      )}>
+                        {!isHidden && <CheckCircle2 size={14} />}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button onClick={savePlan} className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30">Save Plan</button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
 const CRMScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
+  const [isFabOpen, setIsFabOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [blockStart, setBlockStart] = useState('15:00');
+  const [blockEnd, setBlockEnd] = useState('16:00');
 
-  const filteredAppointments = MOCK_APPOINTMENTS.filter(apt => 
+  const filteredAppointments = appointments.filter(apt => 
     apt.status === 'blocked' || 
     (apt.clientName && apt.clientName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleBlockTime = () => {
+    const newBlock = {
+      id: `block-${Date.now()}`,
+      startTime: blockStart,
+      endTime: blockEnd,
+      status: 'blocked' as const
+    };
+    const updated = [...appointments, newBlock].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    setAppointments(updated);
+    setIsBlockModalOpen(false);
+    setIsFabOpen(false);
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
@@ -415,10 +610,93 @@ const CRMScreen = () => {
         </div>
       </div>
 
+      {/* FAB Menu */}
+      <AnimatePresence>
+        {isFabOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            className="fixed bottom-40 right-6 flex flex-col items-end gap-3 z-40"
+          >
+            <button
+              onClick={() => { setIsBlockModalOpen(true); setIsFabOpen(false); }}
+              className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full luxury-shadow text-sm font-medium text-[#2C2C2C] hover:bg-gray-50 transition-colors"
+            >
+              <span>Block Time</span>
+              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
+                <Clock size={16} />
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* FAB */}
-      <button className="fixed bottom-24 right-6 w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl z-40 hover:scale-105 transition-transform">
-        <Plus size={24} />
+      <button 
+        onClick={() => setIsFabOpen(!isFabOpen)}
+        className="fixed bottom-24 right-6 w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl z-40 hover:scale-105 transition-transform"
+      >
+        <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
+          <Plus size={24} />
+        </motion.div>
       </button>
+
+      {/* Block Time Modal */}
+      <AnimatePresence>
+        {isBlockModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsBlockModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Block Personal Time</h3>
+                <button onClick={() => setIsBlockModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Start Time</label>
+                  <input
+                    type="time"
+                    value={blockStart}
+                    onChange={(e) => setBlockStart(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">End Time</label>
+                  <input
+                    type="time"
+                    value={blockEnd}
+                    onChange={(e) => setBlockEnd(e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleBlockTime}
+                className="w-full bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95"
+              >
+                Save Blocked Time
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -512,7 +790,7 @@ const AIMatchScreen = () => {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen flex flex-col pb-24 relative overflow-hidden">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={cn("min-h-screen flex flex-col relative transition-all duration-500", selected ? "pb-[380px]" : "pb-24")}>
       <Header title="AI Assessment" showBack />
       
       {/* Progress Bar */}
@@ -553,19 +831,6 @@ const AIMatchScreen = () => {
         </div>
       </div>
 
-      {!selected && (
-        <div className="px-6 pt-8 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="text-sm text-[#8E8E8E] font-medium">Back</button>
-          <button 
-            disabled={!selected}
-            onClick={() => navigate('/home')}
-            className="bg-[#D4AF37] text-white py-4 px-8 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-[#D4AF37]/30 disabled:opacity-50 transition-opacity"
-          >
-            Next Step
-          </button>
-        </div>
-      )}
-
       {/* Floating Modal */}
       <AnimatePresence>
         {selected && (
@@ -573,7 +838,7 @@ const AIMatchScreen = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="absolute bottom-0 left-0 right-0 p-6 z-50"
+            className="fixed bottom-0 left-0 right-0 p-6 z-50 max-w-md mx-auto"
           >
             <div className="bg-gradient-to-b from-[#F8F6F0] to-[#EBE6DC] rounded-[32px] p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] border border-white/60">
               <p className="text-center text-[#9A8C88] italic text-sm mb-4 font-medium">
@@ -646,8 +911,8 @@ const BookingListScreen = () => {
             <div className="flex items-center justify-between pt-4 border-t border-gray-50">
               <p className="font-serif text-xl text-[#2C2C2C]">${order.totalPrice}</p>
               <div className="flex gap-2">
-                <button className="px-4 py-2 border border-[#2C2C2C] text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium">Contact</button>
-                <button className="px-4 py-2 bg-gray-100 text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium">Details</button>
+                <button onClick={() => navigate('/chat')} className="px-4 py-2 border border-[#2C2C2C] text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium">Contact</button>
+                <button onClick={() => navigate(`/order/${order.id}`)} className="px-4 py-2 bg-gray-100 text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium">Details</button>
               </div>
             </div>
           </div>
@@ -659,6 +924,17 @@ const BookingListScreen = () => {
 
 const MatchResultScreen = () => {
   const navigate = useNavigate();
+  const [rating, setRating] = useState(0);
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleSubmitFeedback = () => {
+    if (rating === 0) return;
+    console.log('Feedback submitted for AI Match:', { rating, comment });
+    setIsSubmitted(true);
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header title="Your Matches" showBack />
@@ -671,7 +947,7 @@ const MatchResultScreen = () => {
           <p className="text-sm text-[#8E8E8E]">Based on your preferences</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 mb-12">
           {MOCK_MUAS.map(mua => (
             <div key={mua.id} className="bg-white rounded-[24px] overflow-hidden luxury-shadow">
               <div className="h-48 overflow-hidden relative">
@@ -689,12 +965,68 @@ const MatchResultScreen = () => {
                   <span className="text-xs font-medium text-[#D4AF37] bg-[#F4E8C8]/50 px-2 py-1 rounded-md">98% Match</span>
                 </div>
                 <p className="text-sm text-[#2C2C2C]/80 mt-3 line-clamp-2">{mua.bio}</p>
-                <button onClick={() => navigate('/home')} className="w-full mt-4 border border-[#2C2C2C] text-[#2C2C2C] py-3 rounded-full text-xs font-medium tracking-widest uppercase">
+                <button onClick={() => navigate(`/artist/${mua.id}`)} className="w-full mt-4 border border-[#2C2C2C] text-[#2C2C2C] py-3 rounded-full text-xs font-medium tracking-widest uppercase">
                   View Profile
                 </button>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Feedback Section */}
+        <div className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50">
+          <h3 className="font-serif text-xl text-[#2C2C2C] mb-2">Rate your matches</h3>
+          <p className="text-xs text-[#8E8E8E] mb-6">Your feedback helps us improve our AI matching model.</p>
+          
+          {isSubmitted ? (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-50 text-green-500 flex items-center justify-center mb-3">
+                <CheckCircle2 size={24} />
+              </div>
+              <p className="font-medium text-[#2C2C2C]">Thank you!</p>
+              <p className="text-xs text-[#8E8E8E] mt-1">Your feedback has been logged.</p>
+            </motion.div>
+          ) : (
+            <div className="space-y-5">
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    className="p-1 transition-transform hover:scale-110 focus:outline-none"
+                  >
+                    <Star 
+                      size={28} 
+                      className={cn(
+                        "transition-colors",
+                        (hoveredRating || rating) >= star 
+                          ? "text-[#D4AF37] fill-[#D4AF37]" 
+                          : "text-gray-200"
+                      )} 
+                    />
+                  </button>
+                ))}
+              </div>
+              
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Tell us what you think (optional)..."
+                className="w-full bg-gray-50 border border-gray-100 rounded-[16px] p-4 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-24"
+              />
+              
+              <button 
+                onClick={handleSubmitFeedback}
+                disabled={rating === 0}
+                className="w-full bg-[#2C2C2C] text-white py-3.5 rounded-full text-xs font-medium tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              >
+                Submit Feedback
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -718,7 +1050,7 @@ const ProfileScreen = () => {
       </div>
 
       <div className="px-6 py-6 space-y-4">
-        <button className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
+        <button onClick={() => navigate('/saved-artists')} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-colors">
               <Heart size={18} />
@@ -728,7 +1060,7 @@ const ProfileScreen = () => {
           <ChevronLeft size={20} className="text-[#8E8E8E] rotate-180" />
         </button>
         
-        <button className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
+        <button onClick={() => navigate('/settings')} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-[#FAF9F6] flex items-center justify-center text-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-white transition-colors">
               <Settings size={18} />
@@ -809,6 +1141,39 @@ const ArtistProfileScreen = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const artist = MOCK_MUAS[1]; // Elena Rostova
+  const [portfolio, setPortfolio] = useState(artist.portfolio);
+  const [services, setServices] = useState(artist.services);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    // Required for Firefox
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.currentTarget.parentNode as any);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    const newPortfolio = [...portfolio];
+    const draggedItem = newPortfolio[draggedIndex];
+    newPortfolio.splice(draggedIndex, 1);
+    newPortfolio.splice(index, 0, draggedItem);
+    
+    setDraggedIndex(index);
+    setPortfolio(newPortfolio);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleDeleteImage = (index: number) => {
+    setPortfolio(portfolio.filter((_, i) => i !== index));
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
@@ -875,20 +1240,41 @@ const ArtistProfileScreen = () => {
             <h3 className="font-serif text-lg text-[#2C2C2C]">Portfolio</h3>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6">
-            {artist.portfolio.map((img, idx) => (
-              <div key={idx} className="relative flex-shrink-0 w-40 h-56 rounded-[24px] overflow-hidden luxury-shadow group">
-                <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            {portfolio.map((img, idx) => (
+              <div 
+                key={img} 
+                className={cn(
+                  "relative flex-shrink-0 w-40 h-56 rounded-[24px] overflow-hidden luxury-shadow group transition-transform",
+                  draggedIndex === idx ? "opacity-50 scale-95" : "opacity-100 scale-100"
+                )}
+                draggable={isEditing}
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+              >
+                <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
                 {isEditing && (
-                  <button className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-red-400 hover:text-red-500 shadow-sm backdrop-blur-sm transition-colors">
-                    <LogOut size={14} className="rotate-90" />
-                  </button>
+                  <>
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute top-3 left-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-[#2C2C2C] shadow-sm backdrop-blur-sm cursor-grab active:cursor-grabbing">
+                      <GripVertical size={16} />
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteImage(idx)}
+                      className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 shadow-sm backdrop-blur-sm transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </>
                 )}
               </div>
             ))}
             {isEditing && (
-              <div className="flex-shrink-0 w-40 h-56 rounded-[24px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-[#8E8E8E] cursor-pointer hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors bg-white/50">
-                <ImageIcon size={24} />
-                <span className="text-[10px] font-medium uppercase tracking-widest">Upload</span>
+              <div className="flex-shrink-0 w-40 h-56 rounded-[24px] border-2 border-dashed border-[#D4AF37] flex flex-col items-center justify-center gap-3 text-[#D4AF37] cursor-pointer hover:bg-[#F4E8C8]/20 transition-colors bg-[#F4E8C8]/10 shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-[#D4AF37] text-white flex items-center justify-center shadow-md">
+                  <Plus size={20} />
+                </div>
+                <span className="text-xs font-medium uppercase tracking-widest">Upload Photo</span>
               </div>
             )}
           </div>
@@ -905,21 +1291,115 @@ const ArtistProfileScreen = () => {
             )}
           </div>
           <div className="space-y-4">
-            {artist.services.map(service => (
+            {services.map((service, idx) => (
               <div key={service.id} className="bg-white rounded-[24px] p-5 luxury-shadow border border-gray-50 relative">
                 {isEditing && (
-                  <button className="absolute top-4 right-4 text-red-400 hover:text-red-500">
-                    <LogOut size={16} className="rotate-90" />
+                  <button 
+                    onClick={() => setServices(services.filter((_, i) => i !== idx))}
+                    className="absolute top-4 right-4 text-red-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={16} />
                   </button>
                 )}
-                <div className="flex justify-between items-start mb-2 pr-6">
-                  <h4 className="font-medium text-[#2C2C2C]">{service.name}</h4>
-                  <span className="font-serif text-[#D4AF37]">${service.price}</span>
-                </div>
-                <p className="text-xs text-[#8E8E8E]">{service.description}</p>
-                <div className="mt-3 inline-flex items-center gap-1 text-[10px] text-[#8E8E8E] uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md">
-                  <Clock size={10} /> {service.duration}
-                </div>
+                
+                {isEditing ? (
+                  <div className="space-y-3 pr-6">
+                    <input 
+                      type="text" 
+                      value={service.name}
+                      onChange={(e) => {
+                        const newServices = [...services];
+                        newServices[idx].name = e.target.value;
+                        setServices(newServices);
+                      }}
+                      className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                      placeholder="Service Name"
+                    />
+                    <div className="flex gap-3">
+                      <input 
+                        type="number" 
+                        value={service.price}
+                        onChange={(e) => {
+                          const newServices = [...services];
+                          newServices[idx].price = Number(e.target.value);
+                          setServices(newServices);
+                        }}
+                        className="font-serif text-[#D4AF37] w-1/3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        placeholder="Price"
+                      />
+                      <input 
+                        type="text" 
+                        value={service.duration}
+                        onChange={(e) => {
+                          const newServices = [...services];
+                          newServices[idx].duration = e.target.value;
+                          setServices(newServices);
+                        }}
+                        className="text-xs text-[#8E8E8E] flex-1 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        placeholder="Duration (e.g., 2 hrs)"
+                      />
+                    </div>
+                    <textarea 
+                      value={service.description}
+                      onChange={(e) => {
+                        const newServices = [...services];
+                        newServices[idx].description = e.target.value;
+                        setServices(newServices);
+                      }}
+                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
+                      placeholder="Service Description"
+                    />
+                    <textarea 
+                      value={service.materialsUsed || ''}
+                      onChange={(e) => {
+                        const newServices = [...services];
+                        newServices[idx].materialsUsed = e.target.value;
+                        setServices(newServices);
+                      }}
+                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
+                      placeholder="Materials Used (Optional)"
+                    />
+                    <textarea 
+                      value={service.stylingNotes || ''}
+                      onChange={(e) => {
+                        const newServices = [...services];
+                        newServices[idx].stylingNotes = e.target.value;
+                        setServices(newServices);
+                      }}
+                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
+                      placeholder="Styling Notes (Optional)"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-2 pr-6">
+                      <h4 className="font-medium text-[#2C2C2C]">{service.name}</h4>
+                      <span className="font-serif text-[#D4AF37]">${service.price}</span>
+                    </div>
+                    <p className="text-xs text-[#8E8E8E] mb-3">{service.description}</p>
+                    
+                    {(service.materialsUsed || service.stylingNotes) && (
+                      <div className="space-y-2 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        {service.materialsUsed && (
+                          <div>
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C]">Materials: </span>
+                            <span className="text-xs text-[#8E8E8E]">{service.materialsUsed}</span>
+                          </div>
+                        )}
+                        {service.stylingNotes && (
+                          <div>
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C]">Notes: </span>
+                            <span className="text-xs text-[#8E8E8E]">{service.stylingNotes}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="inline-flex items-center gap-1 text-[10px] text-[#8E8E8E] uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md">
+                      <Clock size={10} /> {service.duration}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -958,10 +1438,17 @@ export default function App() {
               <Route path="/crm/clients" element={<ClientListScreen />} />
               <Route path="/crm/client/:id" element={<ClientArchiveScreen />} />
               <Route path="/crm/profile" element={<ArtistProfileScreen />} />
+              <Route path="/crm/appointment/:id" element={<CRMAppointmentDetailScreen Header={Header} />} />
               <Route path="/ai-match" element={<AIMatchScreen />} />
               <Route path="/match-results" element={<MatchResultScreen />} />
               <Route path="/bookings" element={<BookingListScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
+              <Route path="/artist/:id" element={<PublicArtistProfileScreen Header={Header} />} />
+              <Route path="/book/:id" element={<BookingScreen Header={Header} />} />
+              <Route path="/chat" element={<ChatScreen Header={Header} />} />
+              <Route path="/order/:id" element={<OrderDetailsScreen Header={Header} />} />
+              <Route path="/saved-artists" element={<SavedArtistsScreen Header={Header} />} />
+              <Route path="/settings" element={<SettingsScreen Header={Header} />} />
             </Routes>
           </AnimatePresence>
           {role && <BottomNav role={role} />}

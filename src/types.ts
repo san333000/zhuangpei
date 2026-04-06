@@ -6,6 +6,8 @@ export interface Service {
   price: number;
   description: string;
   duration: string;
+  materialsUsed?: string;
+  stylingNotes?: string;
 }
 
 export interface MUA {
@@ -39,6 +41,7 @@ export interface ChecklistTask {
   title: string;
   assignee?: string;
   completed: boolean;
+  subCategory?: string;
 }
 
 export interface ChecklistCategory {
