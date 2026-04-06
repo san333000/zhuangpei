@@ -1,0 +1,7 @@
+{
+  "name": "妆配 Zhuangpei",
+  "description": "本地婚礼跟妆与轻场景妆撮合平台，AI 提效，人工把关。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
