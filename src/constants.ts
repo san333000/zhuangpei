@@ -159,5 +159,16 @@ export const MOCK_ORDERS: Order[] = [
     address: 'Grand Plaza Hotel',
     status: 'upcoming',
     totalPrice: 2880
+  },
+  {
+    id: 'o2',
+    muaId: '2',
+    muaName: 'Elena Rostova',
+    serviceName: 'Bridal Trial',
+    date: 'Jan 15, 2026',
+    time: '10:00 AM',
+    address: 'Elena Studio',
+    status: 'completed',
+    totalPrice: 399
   }
 ];

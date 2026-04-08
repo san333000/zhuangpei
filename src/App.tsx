@@ -5,11 +5,13 @@ import {
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
   Plus, ChevronDown, ChevronUp, Search, Settings, Heart, LogOut, Phone,
-  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical
+  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
 import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen } from './newScreens';
+import { AIMatchEntryScreen, AIMatchFlowScreen, AIMatchLoadingScreen, MatchResultScreen } from './AIMatch';
+import { generateServiceRecommendation } from './services/geminiService';
 
 // --- Shared Components ---
 
@@ -18,11 +20,11 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   if (location.pathname === '/role-select') return null;
 
   const navItems = role === 'bride' ? [
-    { path: '/home', icon: Home, label: 'Explore' },
-    { path: '/checklist', icon: CheckCircle2, label: 'Checklist' },
+    { path: '/home', icon: Home, label: 'Home' },
+    { path: '/checklist', icon: CheckCircle2, label: 'Wedding Planner' },
     { path: '/ai-match', icon: Sparkles, label: 'AI Match' },
-    { path: '/bookings', icon: Calendar, label: 'Bookings' },
-    { path: '/profile', icon: User, label: 'Profile' },
+    { path: '/bookings', icon: Calendar, label: 'My Orders' },
+    { path: '/profile', icon: User, label: 'My Profile' },
   ] : [
     { path: '/crm', icon: Calendar, label: 'Schedule' },
     { path: '/crm/clients', icon: Users, label: 'Clients' },
@@ -241,7 +243,7 @@ const ChecklistScreen = () => {
         <div className="flex flex-col gap-3 mb-10">
           <div className="flex gap-3">
             <button onClick={() => alert('Auto-Plan feature coming soon!')} className="flex-1 bg-[#D4AF37] text-white py-3.5 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-[#D4AF37]/20 active:scale-95 transition-all">Auto-Plan</button>
-            <button onClick={() => navigate('/home')} className="flex-1 border border-[#D4AF37] text-[#D4AF37] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase active:scale-95 transition-all">Find Artist</button>
+            <button onClick={() => navigate('/ai-match')} className="flex-1 border border-[#D4AF37] text-[#D4AF37] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase active:scale-95 transition-all">Find Artist</button>
           </div>
           <div className="flex gap-3">
             <button onClick={() => setIsDateModalOpen(true)} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
@@ -494,20 +496,70 @@ const CRMScreen = () => {
         </div>
       </div>
 
-      {/* Financial Snapshot */}
+      {/* Financial Snapshot & Performance */}
       <div className="px-6 mb-8">
         <div className="bg-[#2C2C2C] rounded-[32px] p-8 text-[#FAF9F6] luxury-shadow">
-          <p className="text-xs text-[#FAF9F6]/60 tracking-widest uppercase mb-2">Monthly Revenue</p>
-          <p className="font-serif text-4xl mb-6">$4,500</p>
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="text-xs text-[#FAF9F6]/60 tracking-widest uppercase mb-2">Monthly Earnings</p>
+              <p className="font-serif text-4xl">$4,500</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-[#FAF9F6]/60 tracking-widest uppercase mb-2">Profile Views</p>
+              <p className="font-serif text-2xl text-[#D4AF37]">1.2k</p>
+            </div>
+          </div>
           <div className="flex justify-between border-t border-[#FAF9F6]/10 pt-6">
             <div>
               <p className="text-xl font-medium">12</p>
               <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Upcoming</p>
             </div>
             <div>
+              <p className="text-xl font-medium">85%</p>
+              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Booking Rate</p>
+            </div>
+            <div>
               <p className="text-xl font-medium">4.9</p>
               <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Rating</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Inquiries */}
+      <div className="px-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-serif text-xl text-[#2C2C2C]">Recent Inquiries</h3>
+          <Link to="/chat" className="text-xs text-[#D4AF37] font-medium uppercase tracking-widest">View All</Link>
+        </div>
+        <div className="bg-white rounded-[24px] p-5 luxury-shadow border border-gray-50 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#F4E8C8] flex items-center justify-center text-[#D4AF37]">
+                <User size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#2C2C2C]">Sarah Jenkins</p>
+                <p className="text-xs text-[#8E8E8E]">Wedding on Oct 24 • 1h ago</p>
+              </div>
+            </div>
+            <Link to="/chat" className="px-4 py-2 bg-[#2C2C2C] text-white rounded-full text-[10px] uppercase tracking-widest font-medium active:scale-95 transition-transform">
+              Reply
+            </Link>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
+                <User size={18} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-[#2C2C2C]">Emily Davis</p>
+                <p className="text-xs text-[#8E8E8E]">Trial makeup inquiry • 3h ago</p>
+              </div>
+            </div>
+            <Link to="/chat" className="px-4 py-2 border border-[#2C2C2C] text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium active:scale-95 transition-transform">
+              Reply
+            </Link>
           </div>
         </div>
       </div>
@@ -704,6 +756,15 @@ const CRMScreen = () => {
 const ClientArchiveScreen = () => {
   const { id } = useParams();
   const client = MOCK_CLIENTS.find(c => c.id === id) || MOCK_CLIENTS[0];
+  const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerateRecommendation = async () => {
+    setIsGenerating(true);
+    const result = await generateServiceRecommendation(client);
+    setRecommendation(result);
+    setIsGenerating(false);
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
@@ -751,6 +812,54 @@ const ClientArchiveScreen = () => {
         </div>
       </div>
 
+      {/* AI Recommendation */}
+      <div className="px-6 mb-10">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-serif text-xl text-[#2C2C2C]">AI Recommendation</h3>
+          <Sparkles size={18} className="text-[#D4AF37]" />
+        </div>
+        <div className="bg-gradient-to-br from-[#2C2C2C] to-[#1A1A1A] rounded-[24px] p-6 luxury-shadow text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37]/10 rounded-full blur-2xl -mr-10 -mt-10" />
+          
+          {recommendation ? (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <p className="text-sm text-white/90 leading-relaxed mb-4 relative z-10">
+                {recommendation}
+              </p>
+              <button 
+                onClick={handleGenerateRecommendation}
+                disabled={isGenerating}
+                className="text-[10px] uppercase tracking-widest text-[#D4AF37] font-medium flex items-center gap-1 hover:text-white transition-colors disabled:opacity-50"
+              >
+                {isGenerating ? 'Regenerating...' : 'Regenerate'}
+              </button>
+            </motion.div>
+          ) : (
+            <div className="relative z-10 flex flex-col items-center text-center py-2">
+              <p className="text-sm text-white/70 mb-4">
+                Generate a personalized service recommendation based on {client.name}'s history and preferences.
+              </p>
+              <button 
+                onClick={handleGenerateRecommendation}
+                disabled={isGenerating}
+                className="bg-[#D4AF37] text-white px-6 py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-[#D4AF37]/20 active:scale-95 transition-all disabled:opacity-70 flex items-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                      <Sparkles size={14} />
+                    </motion.div>
+                    Analyzing...
+                  </>
+                ) : (
+                  'Generate Idea'
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Service History */}
       <div className="px-6">
         <h3 className="font-serif text-xl text-[#2C2C2C] mb-6">Service History</h3>
@@ -776,123 +885,46 @@ const ClientArchiveScreen = () => {
   );
 };
 
-const AIMatchScreen = () => {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [vision, setVision] = useState('');
 
-  const options = [
-    { id: 1, title: 'Ethereal Glow', img: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' },
-    { id: 2, title: 'Classic Elegance', img: 'https://images.unsplash.com/photo-1522673607200-164883eecd4c?w=400&q=80' },
-    { id: 3, title: 'Modern Glam', img: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80' },
-    { id: 4, title: 'Soft Romantic', img: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80' },
-  ];
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={cn("min-h-screen flex flex-col relative transition-all duration-500", selected ? "pb-[380px]" : "pb-24")}>
-      <Header title="AI Assessment" showBack />
-      
-      {/* Progress Bar */}
-      <div className="px-6 pt-2 pb-8">
-        <div className="h-0.5 w-full bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full bg-[#D4AF37] w-2/5 transition-all duration-500" />
-        </div>
-        <p className="text-[10px] text-[#8E8E8E] uppercase tracking-widest mt-3 text-center">Step 2 of 5</p>
-      </div>
-
-      <div className="px-6 flex-1">
-        <h2 className="font-serif text-3xl text-[#2C2C2C] mb-8 text-center leading-tight">Which bridal aesthetic resonates most with your vision?</h2>
-        
-        <div className="grid grid-cols-2 gap-4">
-          {options.map(opt => {
-            const isSelected = selected === opt.id;
-            return (
-              <div 
-                key={opt.id}
-                onClick={() => setSelected(opt.id)}
-                className={cn(
-                  "relative rounded-[24px] overflow-hidden aspect-[4/5] cursor-pointer transition-all duration-300",
-                  isSelected ? "ring-2 ring-[#D4AF37] ring-offset-4 ring-offset-[#FAF9F6]" : "opacity-80 hover:opacity-100"
-                )}
-              >
-                <img src={opt.img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#2C2C2C]/80 to-transparent flex items-end p-4">
-                  <p className="text-white font-serif text-sm">{opt.title}</p>
-                </div>
-                {isSelected && (
-                  <div className="absolute top-3 right-3 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white">
-                    <CheckCircle2 size={14} />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Floating Modal */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-0 left-0 right-0 p-6 z-50 max-w-md mx-auto"
-          >
-            <div className="bg-gradient-to-b from-[#F8F6F0] to-[#EBE6DC] rounded-[32px] p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] border border-white/60">
-              <p className="text-center text-[#9A8C88] italic text-sm mb-4 font-medium">
-                Tell us more about your vision (Optional)
-              </p>
-              <textarea
-                value={vision}
-                onChange={(e) => setVision(e.target.value)}
-                placeholder="e.g., I love a natural look with a hint of gold..."
-                className="w-full bg-white/90 border border-white rounded-2xl p-4 text-sm text-[#2C2C2C] placeholder-[#C4BDBA] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/50 resize-none h-24 shadow-inner"
-              />
-              <button
-                onClick={() => navigate('/match-results')}
-                className="w-full mt-6 bg-gradient-to-r from-[#C29B38] to-[#D4AF37] text-white py-4 rounded-full font-medium shadow-lg shadow-[#D4AF37]/30 flex items-center justify-center gap-2 transition-transform active:scale-95"
-              >
-                Confirm & Match <Sparkles size={18} className="text-white" />
-              </button>
-              <button onClick={() => navigate('/match-results')} className="w-full mt-4 text-[#9A8C88] text-sm font-medium flex items-center justify-center gap-1 transition-colors hover:text-[#2C2C2C]">
-                Next <ChevronRight size={16} />
-              </button>
-              <p className="text-center text-[10px] text-[#B5ABA7] uppercase tracking-widest mt-6 font-medium">
-                STEP 3 / 5 COMPLETE
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-};
 
 const BookingListScreen = () => {
+  const navigate = useNavigate();
+  const [activeFilter, setActiveFilter] = useState('All');
+
+  const filteredOrders = MOCK_ORDERS.filter(order => {
+    if (activeFilter === 'All') return true;
+    return order.status.toLowerCase() === activeFilter.toLowerCase();
+  });
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header title="My Appointments" />
       
       <div className="px-6 py-4 flex gap-3 overflow-x-auto no-scrollbar">
-        {['All', 'Upcoming', 'Completed', 'Canceled'].map((filter, i) => (
-          <button key={filter} className={cn(
-            "px-5 py-2 rounded-full text-xs tracking-widest uppercase whitespace-nowrap transition-colors",
-            i === 1 ? "bg-[#2C2C2C] text-white" : "border border-gray-200 text-[#8E8E8E]"
-          )}>
+        {['All', 'Upcoming', 'Completed', 'Canceled'].map((filter) => (
+          <button 
+            key={filter} 
+            onClick={() => setActiveFilter(filter)}
+            className={cn(
+              "px-5 py-2 rounded-full text-xs tracking-widest uppercase whitespace-nowrap transition-colors",
+              activeFilter === filter ? "bg-[#2C2C2C] text-white" : "border border-gray-200 text-[#8E8E8E]"
+            )}
+          >
             {filter}
           </button>
         ))}
       </div>
 
       <div className="px-6 mt-4 space-y-5">
-        {MOCK_ORDERS.map(order => (
+        {filteredOrders.map(order => (
           <div key={order.id} className="bg-white rounded-[24px] p-6 luxury-shadow">
             <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
               <h4 className="font-serif text-lg text-[#2C2C2C]">{order.muaName}</h4>
-              <span className="px-3 py-1 bg-[#F4E8C8]/30 text-[#D4AF37] text-[10px] uppercase tracking-widest rounded-full font-medium">
-                Confirmed
+              <span className={cn(
+                "px-3 py-1 text-[10px] uppercase tracking-widest rounded-full font-medium",
+                order.status === 'completed' ? "bg-green-100 text-green-700" : "bg-[#F4E8C8]/30 text-[#D4AF37]"
+              )}>
+                {order.status}
               </span>
             </div>
             
@@ -917,120 +949,19 @@ const BookingListScreen = () => {
             </div>
           </div>
         ))}
+        {filteredOrders.length === 0 && (
+          <p className="text-center text-sm text-[#8E8E8E] py-8">No appointments found.</p>
+        )}
       </div>
     </motion.div>
   );
 };
 
-const MatchResultScreen = () => {
-  const navigate = useNavigate();
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmitFeedback = () => {
-    if (rating === 0) return;
-    console.log('Feedback submitted for AI Match:', { rating, comment });
-    setIsSubmitted(true);
-  };
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
-      <Header title="Your Matches" showBack />
-      <div className="px-6 py-6">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F4E8C8] text-[#D4AF37] mb-4">
-            <Sparkles size={32} />
-          </div>
-          <h2 className="font-serif text-2xl text-[#2C2C2C] mb-2">We found your perfect artists</h2>
-          <p className="text-sm text-[#8E8E8E]">Based on your preferences</p>
-        </div>
-
-        <div className="space-y-6 mb-12">
-          {MOCK_MUAS.map(mua => (
-            <div key={mua.id} className="bg-white rounded-[24px] overflow-hidden luxury-shadow">
-              <div className="h-48 overflow-hidden relative">
-                <img src={mua.portfolio[0]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-[#2C2C2C] flex items-center gap-1">
-                  <Star size={12} className="text-[#D4AF37] fill-[#D4AF37]" /> {mua.rating}
-                </div>
-              </div>
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-serif text-xl text-[#2C2C2C]">{mua.name}</h3>
-                    <p className="text-xs text-[#8E8E8E]">{mua.title}</p>
-                  </div>
-                  <span className="text-xs font-medium text-[#D4AF37] bg-[#F4E8C8]/50 px-2 py-1 rounded-md">98% Match</span>
-                </div>
-                <p className="text-sm text-[#2C2C2C]/80 mt-3 line-clamp-2">{mua.bio}</p>
-                <button onClick={() => navigate(`/artist/${mua.id}`)} className="w-full mt-4 border border-[#2C2C2C] text-[#2C2C2C] py-3 rounded-full text-xs font-medium tracking-widest uppercase">
-                  View Profile
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Feedback Section */}
-        <div className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50">
-          <h3 className="font-serif text-xl text-[#2C2C2C] mb-2">Rate your matches</h3>
-          <p className="text-xs text-[#8E8E8E] mb-6">Your feedback helps us improve our AI matching model.</p>
-          
-          {isSubmitted ? (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-green-50 text-green-500 flex items-center justify-center mb-3">
-                <CheckCircle2 size={24} />
-              </div>
-              <p className="font-medium text-[#2C2C2C]">Thank you!</p>
-              <p className="text-xs text-[#8E8E8E] mt-1">Your feedback has been logged.</p>
-            </motion.div>
-          ) : (
-            <div className="space-y-5">
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setRating(star)}
-                    onMouseEnter={() => setHoveredRating(star)}
-                    onMouseLeave={() => setHoveredRating(0)}
-                    className="p-1 transition-transform hover:scale-110 focus:outline-none"
-                  >
-                    <Star 
-                      size={28} 
-                      className={cn(
-                        "transition-colors",
-                        (hoveredRating || rating) >= star 
-                          ? "text-[#D4AF37] fill-[#D4AF37]" 
-                          : "text-gray-200"
-                      )} 
-                    />
-                  </button>
-                ))}
-              </div>
-              
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Tell us what you think (optional)..."
-                className="w-full bg-gray-50 border border-gray-100 rounded-[16px] p-4 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-24"
-              />
-              
-              <button 
-                onClick={handleSubmitFeedback}
-                disabled={rating === 0}
-                className="w-full bg-[#2C2C2C] text-white py-3.5 rounded-full text-xs font-medium tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-              >
-                Submit Feedback
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
+const AIMatchFlowScreenWrapper = () => {
+  const { type } = useParams();
+  return <AIMatchFlowScreen type={type as 'wedding' | 'daily'} />;
 };
 
 // --- Main App ---
@@ -1439,8 +1370,10 @@ export default function App() {
               <Route path="/crm/client/:id" element={<ClientArchiveScreen />} />
               <Route path="/crm/profile" element={<ArtistProfileScreen />} />
               <Route path="/crm/appointment/:id" element={<CRMAppointmentDetailScreen Header={Header} />} />
-              <Route path="/ai-match" element={<AIMatchScreen />} />
-              <Route path="/match-results" element={<MatchResultScreen />} />
+              <Route path="/ai-match" element={<AIMatchEntryScreen />} />
+              <Route path="/ai-match/flow/:type" element={<AIMatchFlowScreenWrapper />} />
+              <Route path="/ai-match/loading" element={<AIMatchLoadingScreen />} />
+              <Route path="/ai-match/results" element={<MatchResultScreen />} />
               <Route path="/bookings" element={<BookingListScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
               <Route path="/artist/:id" element={<PublicArtistProfileScreen Header={Header} />} />
