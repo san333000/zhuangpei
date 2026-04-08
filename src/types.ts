@@ -42,12 +42,17 @@ export interface ChecklistTask {
   assignee?: string;
   completed: boolean;
   subCategory?: string;
+  isCustom?: boolean;
+  isHidden?: boolean;
+  deadline?: string;
 }
 
 export interface ChecklistCategory {
   id: string;
   title: string;
   tasks: ChecklistTask[];
+  isCustom?: boolean;
+  isHidden?: boolean;
 }
 
 export interface CRMClient {

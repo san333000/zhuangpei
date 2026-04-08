@@ -183,20 +183,61 @@ const HomeScreen = () => {
 const ChecklistScreen = () => {
   const navigate = useNavigate();
   const [expandedId, setExpandedId] = useState<string | null>('c1');
-  const [checklist, setChecklist] = useState(MOCK_CHECKLIST);
+  const [checklist, setChecklist] = useState<ChecklistCategory[]>(MOCK_CHECKLIST);
+  
+  // Date State
+  const [weddingDate, setWeddingDate] = useState('2026-10-12');
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [tempDate, setTempDate] = useState('2026-10-12');
+  
+  // Plan State
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
-  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
-  const [tempHiddenCategories, setTempHiddenCategories] = useState<string[]>([]);
+  const [tempChecklist, setTempChecklist] = useState<ChecklistCategory[]>([]);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  
+  // Toast State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Date Logic
+  const calculateDaysToGo = (dateStr: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateStr);
+    const diffTime = target.getTime() - today.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const isDateValid = () => {
+    if (!tempDate) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(tempDate);
+    return selectedDate >= today;
+  };
+
+  const handleSaveDate = () => {
+    if (!isDateValid()) return;
+    setWeddingDate(tempDate);
+    setIsDateModalOpen(false);
+    showToast("Wedding date saved");
+  };
+
+  // Plan Logic
   const openPlanModal = () => {
-    setTempHiddenCategories(hiddenCategories);
+    setTempChecklist(JSON.parse(JSON.stringify(checklist)));
+    setEditingCategoryId(null);
     setIsPlanModalOpen(true);
   };
 
   const savePlan = () => {
-    setHiddenCategories(tempHiddenCategories);
+    setChecklist(tempChecklist);
     setIsPlanModalOpen(false);
+    showToast("Wedding checklist updated");
   };
 
   const toggleTask = (categoryId: string, taskId: string) => {
@@ -211,15 +252,24 @@ const ChecklistScreen = () => {
     }));
   };
 
-  const visibleChecklist = checklist.filter(cat => !hiddenCategories.includes(cat.id));
+  const visibleChecklist = checklist.filter(cat => !cat.isHidden);
 
-  const totalTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.length, 0);
-  const completedTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.filter(t => t.completed).length, 0);
-  const progressPercentage = Math.round((completedTasks / totalTasks) * 100);
+  const totalTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.filter(t => !t.isHidden).length, 0);
+  const completedTasks = visibleChecklist.reduce((acc, cat) => acc + cat.tasks.filter(t => !t.isHidden && t.completed).length, 0);
+  const progressPercentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
   const strokeDashoffset = 283 - (283 * progressPercentage) / 100;
 
+  const formatDate = (dateStr: string) => {
+    // Add timezone offset to prevent date shifting
+    const date = new Date(dateStr);
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(date.getTime() + userTimezoneOffset);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+    return adjustedDate.toLocaleDateString('en-US', options);
+  };
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen relative">
       <Header title="The Wedding Checklist" showBack />
       
       <div className="px-6 py-6">
@@ -227,8 +277,8 @@ const ChecklistScreen = () => {
         <div className="bg-white rounded-[32px] p-8 luxury-shadow mb-8 flex items-center justify-between">
           <div>
             <p className="text-xs text-[#8E8E8E] tracking-widest uppercase mb-2">Wedding Date</p>
-            <p className="font-serif text-xl text-[#2C2C2C] mb-4">Oct 12, 2026</p>
-            <p className="text-sm text-[#D4AF37] font-medium">185 Days to go</p>
+            <p className="font-serif text-xl text-[#2C2C2C] mb-4">{formatDate(weddingDate)}</p>
+            <p className="text-sm text-[#D4AF37] font-medium">{calculateDaysToGo(weddingDate)} Days to go</p>
           </div>
           <div className="relative w-20 h-20 flex items-center justify-center">
             <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
@@ -246,7 +296,7 @@ const ChecklistScreen = () => {
             <button onClick={() => navigate('/ai-match')} className="flex-1 border border-[#D4AF37] text-[#D4AF37] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase active:scale-95 transition-all">Find Artist</button>
           </div>
           <div className="flex gap-3">
-            <button onClick={() => setIsDateModalOpen(true)} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
+            <button onClick={() => { setTempDate(weddingDate); setIsDateModalOpen(true); }} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
               <Calendar size={14} className="text-[#D4AF37]" /> Customize Date
             </button>
             <button onClick={openPlanModal} className="flex-1 bg-white border border-gray-100 text-[#2C2C2C] py-3.5 rounded-full text-xs font-medium tracking-widest uppercase hover:bg-gray-50 flex items-center justify-center gap-2 transition-all active:scale-95">
@@ -259,8 +309,11 @@ const ChecklistScreen = () => {
         <div className="space-y-5">
           {visibleChecklist.map(category => {
             const isExpanded = expandedId === category.id;
-            const completedCount = category.tasks.filter(t => t.completed).length;
-            const progress = Math.round((completedCount / category.tasks.length) * 100);
+            const visibleTasks = category.tasks.filter(t => !t.isHidden);
+            if (visibleTasks.length === 0) return null;
+            
+            const completedCount = visibleTasks.filter(t => t.completed).length;
+            const progress = Math.round((completedCount / visibleTasks.length) * 100);
             
             return (
               <div key={category.id} className="bg-white rounded-[28px] luxury-shadow overflow-hidden transition-all duration-300 border border-gray-50/50">
@@ -270,8 +323,8 @@ const ChecklistScreen = () => {
                 >
                   <div className="flex flex-col items-start flex-1 pr-6">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <span className="font-serif text-[19px] text-[#2C2C2C] group-hover:text-[#D4AF37] transition-colors">{category.title}</span>
-                      <span className="text-xs font-semibold text-[#8E8E8E] bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100/80">{completedCount}/{category.tasks.length}</span>
+                      <span className="font-serif text-[19px] text-[#2C2C2C] group-hover:text-[#D4AF37] transition-colors text-left">{category.title}</span>
+                      <span className="text-xs font-semibold text-[#8E8E8E] bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100/80">{completedCount}/{visibleTasks.length}</span>
                     </div>
                     <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div 
@@ -294,17 +347,17 @@ const ChecklistScreen = () => {
                       className="px-7 pb-7 space-y-5"
                     >
                       {Object.entries(
-                        category.tasks.reduce((acc, task) => {
+                        visibleTasks.reduce((acc, task) => {
                           const sub = task.subCategory || 'Other';
                           if (!acc[sub]) acc[sub] = [];
                           acc[sub].push(task);
                           return acc;
-                        }, {} as Record<string, typeof category.tasks>)
+                        }, {} as Record<string, typeof visibleTasks>)
                       ).map(([subCat, tasks]: [string, any]) => (
                         <div key={subCat} className="mb-5 last:mb-0">
                           <h4 className="text-[11px] font-bold text-[#8E8E8E] uppercase tracking-widest mb-4 pl-3 border-l-2 border-[#D4AF37]">{subCat}</h4>
                           <div className="space-y-3.5">
-                            {tasks.map(task => (
+                            {tasks.map((task: any) => (
                               <div 
                                 key={task.id} 
                                 onClick={() => toggleTask(category.id, task.id)}
@@ -333,22 +386,33 @@ const ChecklistScreen = () => {
                                     "text-[15px] font-medium transition-all duration-300 leading-snug", 
                                     task.completed ? "text-gray-400 line-through decoration-gray-300/80" : "text-[#2C2C2C] group-hover:text-[#D4AF37]"
                                   )}>{task.title}</p>
-                                  {task.assignee && (
-                                    <div className="flex items-center gap-2 mt-3">
-                                      <div className={cn(
-                                        "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm",
-                                        task.assignee === 'Bride' ? "bg-gradient-to-br from-pink-300 to-pink-400" : 
-                                        task.assignee === 'Groom' ? "bg-gradient-to-br from-blue-300 to-blue-400" : 
-                                        "bg-gradient-to-br from-purple-300 to-purple-400"
-                                      )}>
-                                        {task.assignee.charAt(0)}
+                                  <div className="flex items-center gap-4 mt-3">
+                                    {task.assignee && (
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                          "w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm",
+                                          task.assignee === 'Bride' ? "bg-gradient-to-br from-pink-300 to-pink-400" : 
+                                          task.assignee === 'Groom' ? "bg-gradient-to-br from-blue-300 to-blue-400" : 
+                                          "bg-gradient-to-br from-purple-300 to-purple-400"
+                                        )}>
+                                          {task.assignee.charAt(0)}
+                                        </div>
+                                        <p className={cn(
+                                          "text-[10px] tracking-widest uppercase font-semibold",
+                                          task.completed ? "text-gray-400" : "text-[#8E8E8E]"
+                                        )}>{task.assignee}</p>
                                       </div>
-                                      <p className={cn(
-                                        "text-[10px] tracking-widest uppercase font-semibold",
-                                        task.completed ? "text-gray-400" : "text-[#8E8E8E]"
-                                      )}>{task.assignee}</p>
-                                    </div>
-                                  )}
+                                    )}
+                                    {task.deadline && (
+                                      <div className="flex items-center gap-1.5">
+                                        <Calendar size={12} className={task.completed ? "text-gray-400" : "text-[#D4AF37]"} />
+                                        <p className={cn(
+                                          "text-[10px] tracking-widest uppercase font-semibold",
+                                          task.completed ? "text-gray-400" : "text-[#8E8E8E]"
+                                        )}>{formatDate(task.deadline)}</p>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -382,8 +446,24 @@ const ChecklistScreen = () => {
                 <button onClick={() => setIsDateModalOpen(false)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C]"><X size={20} /></button>
               </div>
               <p className="text-sm text-[#8E8E8E] mb-6">Select your new wedding date to recalculate your timeline.</p>
-              <input type="date" className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] mb-6" />
-              <button onClick={() => setIsDateModalOpen(false)} className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30">Save Date</button>
+              <input 
+                type="date" 
+                value={tempDate}
+                onChange={(e) => setTempDate(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] mb-2" 
+              />
+              {!isDateValid() && tempDate && (
+                <p className="text-xs text-red-500 mb-4 pl-2">Please select a date in the future.</p>
+              )}
+              <div className="mt-6">
+                <button 
+                  onClick={handleSaveDate} 
+                  disabled={!isDateValid()}
+                  className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30 disabled:opacity-50 disabled:shadow-none transition-all"
+                >
+                  Save Date
+                </button>
+              </div>
             </motion.div>
           </>
         )}
@@ -397,50 +477,243 @@ const ChecklistScreen = () => {
             />
             <motion.div 
               initial={{ opacity: 0, y: 100 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 100 }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 pb-12 z-[60] max-w-md mx-auto max-h-[80vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-8 pb-12 z-[60] max-w-md mx-auto max-h-[85vh] overflow-y-auto flex flex-col"
             >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-serif text-xl text-[#2C2C2C]">Customize Plan</h3>
-                <button onClick={() => setIsPlanModalOpen(false)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C]"><X size={20} /></button>
-              </div>
-              <p className="text-sm text-[#8E8E8E] mb-6">Add or remove phases from your wedding checklist.</p>
-              
-              <div className="space-y-3 mb-8">
-                {checklist.map(cat => {
-                  const isHidden = tempHiddenCategories.includes(cat.id);
-                  return (
-                    <div 
-                      key={cat.id} 
-                      onClick={() => {
-                        if (isHidden) {
-                          setTempHiddenCategories(prev => prev.filter(id => id !== cat.id));
-                        } else {
-                          setTempHiddenCategories(prev => [...prev, cat.id]);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all active:scale-[0.98]",
-                        isHidden ? "border-gray-100 bg-gray-50/50" : "border-[#D4AF37]/30 bg-white"
-                      )}
-                    >
-                      <span className={cn(
-                        "font-medium transition-colors",
-                        isHidden ? "text-[#8E8E8E]" : "text-[#2C2C2C]"
-                      )}>{cat.title}</span>
-                      <div className={cn(
-                        "w-5 h-5 rounded border flex items-center justify-center transition-colors",
-                        isHidden ? "border-gray-300 bg-transparent" : "border-[#D4AF37] bg-[#D4AF37] text-white"
-                      )}>
-                        {!isHidden && <CheckCircle2 size={14} />}
+              {!editingCategoryId ? (
+                // --- Categories View ---
+                <>
+                  <div className="flex justify-between items-center mb-6 shrink-0">
+                    <h3 className="font-serif text-xl text-[#2C2C2C]">Customize Plan</h3>
+                    <button onClick={() => setIsPlanModalOpen(false)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C]"><X size={20} /></button>
+                  </div>
+                  <p className="text-sm text-[#8E8E8E] mb-6 shrink-0">Add or remove phases from your wedding checklist.</p>
+                  
+                  <div className="space-y-3 mb-6 overflow-y-auto flex-1 pr-2">
+                    {tempChecklist.map(cat => (
+                      <div 
+                        key={cat.id} 
+                        className={cn(
+                          "flex items-center justify-between p-4 border rounded-xl transition-all",
+                          cat.isHidden ? "border-gray-100 bg-gray-50/50" : "border-[#D4AF37]/30 bg-white"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {cat.isCustom ? (
+                            <input 
+                              type="text" 
+                              value={cat.title}
+                              onChange={(e) => {
+                                setTempChecklist(prev => prev.map(c => c.id === cat.id ? { ...c, title: e.target.value } : c));
+                              }}
+                              className="font-medium text-[#2C2C2C] bg-transparent border-b border-dashed border-gray-300 focus:border-[#D4AF37] focus:outline-none w-full"
+                            />
+                          ) : (
+                            <span className={cn(
+                              "font-medium transition-colors cursor-pointer",
+                              cat.isHidden ? "text-[#8E8E8E]" : "text-[#2C2C2C]"
+                            )} onClick={() => {
+                              setTempChecklist(prev => prev.map(c => c.id === cat.id ? { ...c, isHidden: !c.isHidden } : c));
+                            }}>{cat.title}</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2 pl-4">
+                          {cat.isCustom ? (
+                            <button 
+                              onClick={() => setTempChecklist(prev => prev.filter(c => c.id !== cat.id))}
+                              className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          ) : (
+                            <div 
+                              onClick={() => {
+                                setTempChecklist(prev => prev.map(c => c.id === cat.id ? { ...c, isHidden: !c.isHidden } : c));
+                              }}
+                              className={cn(
+                                "w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer",
+                                cat.isHidden ? "border-gray-300 bg-transparent" : "border-[#D4AF37] bg-[#D4AF37] text-white"
+                              )}
+                            >
+                              {!cat.isHidden && <CheckCircle2 size={14} />}
+                            </div>
+                          )}
+                          <button 
+                            onClick={() => setEditingCategoryId(cat.id)}
+                            className="p-1.5 text-[#8E8E8E] hover:bg-gray-100 rounded-lg transition-colors ml-1"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    ))}
+                  </div>
 
-              <button onClick={savePlan} className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30">Save Plan</button>
+                  <div className="shrink-0 space-y-4">
+                    <button 
+                      onClick={() => {
+                        const newCat: ChecklistCategory = {
+                          id: `custom_cat_${Date.now()}`,
+                          title: 'New Category',
+                          tasks: [],
+                          isCustom: true,
+                          isHidden: false
+                        };
+                        setTempChecklist(prev => [...prev, newCat]);
+                      }}
+                      className="w-full py-3 border border-dashed border-[#D4AF37] text-[#D4AF37] rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#F4E8C8]/20 transition-colors"
+                    >
+                      <Plus size={16} /> Add Custom Category
+                    </button>
+                    <button onClick={savePlan} className="w-full bg-[#D4AF37] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg shadow-[#D4AF37]/30">Save Plan</button>
+                  </div>
+                </>
+              ) : (
+                // --- Sub-tasks View ---
+                <>
+                  <div className="flex items-center gap-3 mb-6 shrink-0">
+                    <button onClick={() => setEditingCategoryId(null)} className="p-2 bg-gray-50 rounded-full text-[#8E8E8E] hover:text-[#2C2C2C] -ml-2"><ChevronLeft size={20} /></button>
+                    <h3 className="font-serif text-xl text-[#2C2C2C] flex-1 truncate">
+                      {tempChecklist.find(c => c.id === editingCategoryId)?.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-[#8E8E8E] mb-6 shrink-0">Edit sub-tasks for this category.</p>
+                  
+                  <div className="space-y-3 mb-6 overflow-y-auto flex-1 pr-2">
+                    {tempChecklist.find(c => c.id === editingCategoryId)?.tasks.map(task => (
+                      <div 
+                        key={task.id} 
+                        className={cn(
+                          "flex items-center justify-between p-4 border rounded-xl transition-all",
+                          task.isHidden ? "border-gray-100 bg-gray-50/50" : "border-[#D4AF37]/30 bg-white"
+                        )}
+                      >
+                        <div className="flex flex-col gap-2 flex-1 pr-4">
+                          {task.isCustom ? (
+                            <>
+                              <input 
+                                type="text" 
+                                value={task.title}
+                                onChange={(e) => {
+                                  setTempChecklist(prev => prev.map(c => {
+                                    if (c.id === editingCategoryId) {
+                                      return { ...c, tasks: c.tasks.map(t => t.id === task.id ? { ...t, title: e.target.value } : t) };
+                                    }
+                                    return c;
+                                  }));
+                                }}
+                                className="font-medium text-[#2C2C2C] bg-transparent border-b border-dashed border-gray-300 focus:border-[#D4AF37] focus:outline-none w-full text-sm pb-1"
+                                placeholder="Task Name"
+                              />
+                              <div className="flex items-center gap-2 mt-1">
+                                <Calendar size={12} className="text-[#8E8E8E]" />
+                                <input
+                                  type="date"
+                                  value={task.deadline || ''}
+                                  onChange={(e) => {
+                                    setTempChecklist(prev => prev.map(c => {
+                                      if (c.id === editingCategoryId) {
+                                        return { ...c, tasks: c.tasks.map(t => t.id === task.id ? { ...t, deadline: e.target.value } : t) };
+                                      }
+                                      return c;
+                                    }));
+                                  }}
+                                  className="text-[11px] text-[#8E8E8E] bg-transparent border-b border-dashed border-gray-300 focus:border-[#D4AF37] focus:outline-none"
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <span className={cn(
+                              "font-medium transition-colors text-sm",
+                              task.isHidden ? "text-[#8E8E8E]" : "text-[#2C2C2C]"
+                            )}>{task.title}</span>
+                          )}
+                          {!task.isCustom && task.subCategory && (
+                            <span className="text-[10px] text-[#8E8E8E] uppercase tracking-widest">{task.subCategory}</span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {task.isCustom ? (
+                            <button 
+                              onClick={() => {
+                                setTempChecklist(prev => prev.map(c => {
+                                  if (c.id === editingCategoryId) {
+                                    return { ...c, tasks: c.tasks.filter(t => t.id !== task.id) };
+                                  }
+                                  return c;
+                                }));
+                              }}
+                              className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          ) : (
+                            <div 
+                              onClick={() => {
+                                setTempChecklist(prev => prev.map(c => {
+                                  if (c.id === editingCategoryId) {
+                                    return { ...c, tasks: c.tasks.map(t => t.id === task.id ? { ...t, isHidden: !t.isHidden } : t) };
+                                  }
+                                  return c;
+                                }));
+                              }}
+                              className={cn(
+                                "w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer",
+                                task.isHidden ? "border-gray-300 bg-transparent" : "border-[#D4AF37] bg-[#D4AF37] text-white"
+                              )}
+                            >
+                              {!task.isHidden && <CheckCircle2 size={14} />}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="shrink-0 space-y-4">
+                    <button 
+                      onClick={() => {
+                        const newTask: ChecklistTask = {
+                          id: `custom_task_${Date.now()}`,
+                          title: 'New Task',
+                          completed: false,
+                          isCustom: true,
+                          isHidden: false,
+                          subCategory: 'Custom'
+                        };
+                        setTempChecklist(prev => prev.map(c => {
+                          if (c.id === editingCategoryId) {
+                            return { ...c, tasks: [...c.tasks, newTask] };
+                          }
+                          return c;
+                        }));
+                      }}
+                      className="w-full py-3 border border-dashed border-[#D4AF37] text-[#D4AF37] rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#F4E8C8]/20 transition-colors"
+                    >
+                      <Plus size={16} /> Add Custom Sub-task
+                    </button>
+                    <button onClick={() => setEditingCategoryId(null)} className="w-full bg-[#2C2C2C] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg">Done Editing</button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#2C2C2C] text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl z-[70] whitespace-nowrap flex items-center gap-2"
+          >
+            <CheckCircle2 size={16} className="text-[#D4AF37]" />
+            {toastMessage}
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
@@ -1280,26 +1553,32 @@ const ArtistProfileScreen = () => {
                       className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
                       placeholder="Service Description"
                     />
-                    <textarea 
-                      value={service.materialsUsed || ''}
-                      onChange={(e) => {
-                        const newServices = [...services];
-                        newServices[idx].materialsUsed = e.target.value;
-                        setServices(newServices);
-                      }}
-                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
-                      placeholder="Materials Used (Optional)"
-                    />
-                    <textarea 
-                      value={service.stylingNotes || ''}
-                      onChange={(e) => {
-                        const newServices = [...services];
-                        newServices[idx].stylingNotes = e.target.value;
-                        setServices(newServices);
-                      }}
-                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
-                      placeholder="Styling Notes (Optional)"
-                    />
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Materials Used (Optional)</label>
+                      <textarea 
+                        value={service.materialsUsed || ''}
+                        onChange={(e) => {
+                          const newServices = [...services];
+                          newServices[idx].materialsUsed = e.target.value;
+                          setServices(newServices);
+                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
+                        placeholder="e.g., MAC, Charlotte Tilbury..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Styling Notes (Optional)</label>
+                      <textarea 
+                        value={service.stylingNotes || ''}
+                        onChange={(e) => {
+                          const newServices = [...services];
+                          newServices[idx].stylingNotes = e.target.value;
+                          setServices(newServices);
+                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
+                        placeholder="e.g., Suitable for outdoor weddings..."
+                      />
+                    </div>
                   </div>
                 ) : (
                   <>

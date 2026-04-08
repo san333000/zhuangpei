@@ -259,7 +259,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen flex flex-col bg-[#FAF9F6] pb-48">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={cn("min-h-screen flex flex-col bg-[#FAF9F6]", step === 3 ? "pb-[380px]" : "pb-32")}>
       <Header title="AI Assessment" showBack onBack={() => step > 1 ? setStep(step - 1) : navigate(-1)} />
       
       {/* Progress Bar */}
@@ -280,9 +280,9 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
         {type === 'daily' && step === 3 && renderDailyStep3()}
       </div>
 
-      <div className="fixed bottom-[70px] left-0 right-0 p-6 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent max-w-md mx-auto z-40 flex flex-col gap-6">
+      <div className="fixed bottom-[60px] left-0 right-0 px-6 pb-6 pt-10 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] via-80% to-transparent max-w-md mx-auto z-40 flex flex-col gap-4">
         {step === 3 && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -297,7 +297,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
         )}
         <button
           onClick={handleNext}
-          className="w-full bg-gradient-to-r from-[#C29B38] to-[#D4AF37] text-white py-4 rounded-full font-medium shadow-lg shadow-[#D4AF37]/30 flex items-center justify-center gap-2 transition-transform active:scale-95 uppercase tracking-widest text-xs"
+          className="w-full bg-gradient-to-r from-[#C29B38] to-[#D4AF37] text-white py-4 rounded-full font-medium shadow-lg shadow-[#D4AF37]/30 flex items-center justify-center gap-2 transition-transform active:scale-95 uppercase tracking-widest text-xs mt-2"
         >
           {step === 3 ? (
             <>Confirm & Match <Sparkles size={16} className="text-white" /></>
