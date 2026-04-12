@@ -55,6 +55,13 @@ export interface ChecklistCategory {
   isHidden?: boolean;
 }
 
+export interface ClientNote {
+  id: string;
+  content: string;
+  tags: string[];
+  date: string;
+}
+
 export interface CRMClient {
   id: string;
   name: string;
@@ -65,6 +72,9 @@ export interface CRMClient {
   noShows: number;
   lastVisit: string;
   notes: string;
+  richNotes?: ClientNote[];
+  preferredStyles?: string[];
+  allergies?: string[];
   history: { id: string, date: string, service: string, image: string }[];
 }
 
@@ -75,8 +85,10 @@ export interface CRMAppointment {
   clientAvatar?: string;
   service?: string;
   price?: number;
+  date?: string;
   startTime: string;
   endTime: string;
+  isAllDay?: boolean;
   status: 'booked' | 'blocked' | 'completed' | 'no-show';
   paymentStatus?: 'unpaid' | 'paid';
 }

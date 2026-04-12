@@ -161,12 +161,16 @@ export const BookingScreen = ({ Header }: any) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const artist = MOCK_MUAS.find(m => m.id === id) || MOCK_MUAS[0];
+  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [notes, setNotes] = useState('');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
+  const selectedService = artist.services.find(s => s.id === selectedServiceId);
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-40 min-h-screen">
       <Header title="Book Consultation" showBack />
       
       <div className="px-6 py-6 space-y-8">
@@ -175,6 +179,28 @@ export const BookingScreen = ({ Header }: any) => {
           <div>
             <h3 className="font-serif text-lg text-[#2C2C2C]">{artist.name}</h3>
             <p className="text-xs text-[#8E8E8E]">{artist.title}</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-serif text-lg text-[#2C2C2C] mb-4">Select Service</h3>
+          <div className="space-y-3">
+            {artist.services.map(service => (
+              <div 
+                key={service.id}
+                onClick={() => setSelectedServiceId(service.id)}
+                className={cn(
+                  "p-4 rounded-[20px] border transition-all cursor-pointer luxury-shadow",
+                  selectedServiceId === service.id ? "border-[#D4AF37] bg-[#F4E8C8]/10" : "border-gray-100 bg-white"
+                )}
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <h4 className="font-medium text-[#2C2C2C]">{service.name}</h4>
+                  <span className="font-serif text-[#D4AF37]">${service.price}</span>
+                </div>
+                <p className="text-xs text-[#8E8E8E]">{service.duration}</p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -205,12 +231,22 @@ export const BookingScreen = ({ Header }: any) => {
             ))}
           </div>
         </div>
+
+        <div>
+          <h3 className="font-serif text-lg text-[#2C2C2C] mb-4">Notes (Optional)</h3>
+          <textarea 
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Any specific requests, skin conditions, or styling preferences..."
+            className="w-full bg-white border border-gray-200 rounded-xl p-4 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] transition-colors luxury-shadow resize-none h-28"
+          />
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 z-40">
         <button 
           onClick={() => setIsConfirmModalOpen(true)} 
-          disabled={!selectedDate || !selectedTime}
+          disabled={!selectedServiceId || !selectedDate || !selectedTime}
           className="w-full bg-[#2C2C2C] disabled:bg-gray-300 text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-lg active:scale-95 transition-all"
         >
           Confirm Booking
@@ -227,9 +263,15 @@ export const BookingScreen = ({ Header }: any) => {
               className="bg-white rounded-[32px] p-8 w-full max-w-sm luxury-shadow"
             >
               <h3 className="font-serif text-2xl text-[#2C2C2C] mb-2 text-center">Confirm Booking</h3>
-              <p className="text-sm text-[#8E8E8E] text-center mb-6">
-                Are you sure you want to book a consultation with {artist.name} on {selectedDate} at {selectedTime}?
+              <p className="text-sm text-[#8E8E8E] text-center mb-4">
+                Are you sure you want to book <strong className="text-[#2C2C2C]">{selectedService?.name}</strong> with {artist.name} on {selectedDate} at {selectedTime}?
               </p>
+              {selectedService && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
+                  <p className="text-xs text-[#8E8E8E] uppercase tracking-widest mb-1">Total Amount</p>
+                  <p className="font-serif text-2xl text-[#D4AF37]">${selectedService.price}</p>
+                </div>
+              )}
               <div className="flex gap-3">
                 <button 
                   onClick={() => setIsConfirmModalOpen(false)} 

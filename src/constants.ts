@@ -136,6 +136,16 @@ export const MOCK_CLIENTS: CRMClient[] = [
     noShows: 0,
     lastVisit: '2 months ago',
     notes: 'Allergic to latex lash glue. Prefers warm earthy eyeshadow tones. Focus on skin prep.',
+    richNotes: [
+      {
+        id: 'note1',
+        content: '**Skin Prep:** Used water-based primer. Avoided heavy oils.\n\n*   Loves Charlotte Tilbury Flawless Filter.\n*   Requested extra setting spray.',
+        tags: ['Skin Prep', 'Product Prefs'],
+        date: 'Oct 12, 2025'
+      }
+    ],
+    preferredStyles: ['Soft Glam', 'Earthy Tones'],
+    allergies: ['Latex Lash Glue'],
     history: [
       { id: 'h1', date: 'Oct 12, 2025', service: 'Engagement Shoot', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80' }
     ]
@@ -143,9 +153,9 @@ export const MOCK_CLIENTS: CRMClient[] = [
 ];
 
 export const MOCK_APPOINTMENTS: CRMAppointment[] = [
-  { id: 'a1', clientId: 'client1', clientName: 'Julianne Moore', clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop', service: 'Bridal Trial', price: 399, startTime: '09:00', endTime: '11:00', status: 'booked', paymentStatus: 'unpaid' },
-  { id: 'a2', startTime: '12:00', endTime: '13:00', status: 'blocked' },
-  { id: 'a3', clientId: 'client2', clientName: 'Sarah Jenkins', clientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop', service: 'Event Makeup', price: 150, startTime: '14:00', endTime: '15:30', status: 'completed', paymentStatus: 'paid' },
+  { id: 'a1', clientId: 'client1', clientName: 'Julianne Moore', clientAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop', service: 'Bridal Trial', price: 399, date: '2026-04-15', startTime: '09:00', endTime: '11:00', status: 'booked', paymentStatus: 'unpaid' },
+  { id: 'a2', date: '2026-04-15', startTime: '12:00', endTime: '13:00', status: 'blocked' },
+  { id: 'a3', clientId: 'client2', clientName: 'Sarah Jenkins', clientAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop', service: 'Event Makeup', price: 150, date: '2026-04-15', startTime: '14:00', endTime: '15:30', status: 'completed', paymentStatus: 'paid' },
 ];
 
 export const MOCK_ORDERS: Order[] = [

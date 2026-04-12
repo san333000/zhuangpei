@@ -1,6 +1,7 @@
 import React, { useState, ReactNode } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
+import Markdown from 'react-markdown';
 import { 
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
@@ -133,6 +134,29 @@ const HomeScreen = () => {
               Start AI Matching
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* Quick Booking */}
+      <section className="mb-10">
+        <div className="px-6 mb-4 flex justify-between items-end">
+          <h3 className="font-serif text-xl text-[#2C2C2C]">Quick Booking</h3>
+        </div>
+        <div className="flex gap-4 overflow-x-auto px-6 pb-4 no-scrollbar">
+          {[
+            { id: 's1', title: 'Bridal Trial', icon: Sparkles, price: 'From $150' },
+            { id: 's2', title: 'Event Makeup', icon: User, price: 'From $120' },
+            { id: 's3', title: 'Full Wedding Day', icon: Heart, price: 'From $800' },
+            { id: 's4', title: 'Touch-up Package', icon: Clock, price: 'From $200' },
+          ].map(service => (
+            <div key={service.id} onClick={() => navigate('/ai-match')} className="flex-shrink-0 w-36 bg-white rounded-[20px] p-4 luxury-shadow cursor-pointer active:scale-95 transition-transform border border-gray-50">
+              <div className="w-10 h-10 rounded-full bg-[#F4E8C8]/50 flex items-center justify-center text-[#D4AF37] mb-3">
+                <service.icon size={18} />
+              </div>
+              <h4 className="font-medium text-[#2C2C2C] text-sm mb-1">{service.title}</h4>
+              <p className="text-[10px] text-[#8E8E8E] uppercase tracking-widest">{service.price}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -725,25 +749,84 @@ const CRMScreen = () => {
   const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('2026-04-15');
+  const [blockDate, setBlockDate] = useState('2026-04-15');
   const [blockStart, setBlockStart] = useState('15:00');
   const [blockEnd, setBlockEnd] = useState('16:00');
+  const [isAllDay, setIsAllDay] = useState(false);
+  const [blockError, setBlockError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
 
-  const filteredAppointments = appointments.filter(apt => 
-    apt.status === 'blocked' || 
-    (apt.clientName && apt.clientName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // Add Client State
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
+  const [newClientNotes, setNewClientNotes] = useState('');
+
+  const filteredAppointments = appointments.filter(apt => {
+    if (apt.date !== selectedDate) return false;
+    if (activeFilter !== 'All' && apt.status.toLowerCase() !== activeFilter.toLowerCase()) return false;
+    if (searchQuery && apt.status !== 'blocked') {
+      if (!apt.clientName?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    }
+    return true;
+  });
 
   const handleBlockTime = () => {
+    setBlockError('');
+    const start = isAllDay ? '00:00' : blockStart;
+    const end = isAllDay ? '23:59' : blockEnd;
+
+    if (start >= end) {
+      setBlockError('End time must be after start time.');
+      return;
+    }
+
+    const hasOverlap = appointments.some(apt => {
+      if (apt.date !== blockDate) return false;
+      return (start < apt.endTime && end > apt.startTime);
+    });
+
+    if (hasOverlap) {
+      setBlockError('This time slot overlaps with an existing appointment or block.');
+      return;
+    }
+
     const newBlock = {
       id: `block-${Date.now()}`,
-      startTime: blockStart,
-      endTime: blockEnd,
+      date: blockDate,
+      startTime: start,
+      endTime: end,
+      isAllDay,
       status: 'blocked' as const
     };
     const updated = [...appointments, newBlock].sort((a, b) => a.startTime.localeCompare(b.startTime));
     setAppointments(updated);
     setIsBlockModalOpen(false);
     setIsFabOpen(false);
+  };
+
+  const handleSaveClient = () => {
+    if (!newClientName) return;
+    
+    const newClient: CRMClient = {
+      id: `client-${Date.now()}`,
+      name: newClientName,
+      phone: newClientPhone,
+      notes: newClientNotes,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newClientName)}&background=F4E8C8&color=D4AF37`,
+      tags: ['New'],
+      totalSpent: 0,
+      noShows: 0,
+      lastVisit: 'Never',
+      history: []
+    };
+    
+    MOCK_CLIENTS.push(newClient);
+    setIsAddClientModalOpen(false);
+    setNewClientName('');
+    setNewClientPhone('');
+    setNewClientNotes('');
   };
 
   return (
@@ -753,9 +836,9 @@ const CRMScreen = () => {
         <p className="text-sm text-[#8E8E8E]">Here is your schedule for today.</p>
       </div>
 
-      {/* Search Bar */}
-      <div className="px-6 mb-8">
-        <div className="relative">
+      {/* Search Bar & Add Client */}
+      <div className="px-6 mb-8 flex gap-3">
+        <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search size={18} className="text-[#8E8E8E]" />
           </div>
@@ -767,6 +850,12 @@ const CRMScreen = () => {
             className="w-full bg-white border border-gray-200 rounded-full py-3.5 pl-11 pr-4 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all luxury-shadow"
           />
         </div>
+        <button 
+          onClick={() => setIsAddClientModalOpen(true)}
+          className="flex-shrink-0 w-12 h-12 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center luxury-shadow active:scale-95 transition-transform"
+        >
+          <Plus size={20} />
+        </button>
       </div>
 
       {/* Financial Snapshot & Performance */}
@@ -840,16 +929,27 @@ const CRMScreen = () => {
       {/* Calendar Strip */}
       <div className="mb-8">
         <div className="flex gap-3 overflow-x-auto px-6 pb-4 no-scrollbar">
-          {['Mon 12', 'Tue 13', 'Wed 14', 'Thu 15', 'Fri 16', 'Sat 17'].map((day, i) => {
-            const isActive = day === 'Thu 15';
+          {[
+            { label: 'Mon 13', date: '2026-04-13' },
+            { label: 'Tue 14', date: '2026-04-14' },
+            { label: 'Wed 15', date: '2026-04-15' },
+            { label: 'Thu 16', date: '2026-04-16' },
+            { label: 'Fri 17', date: '2026-04-17' },
+            { label: 'Sat 18', date: '2026-04-18' }
+          ].map((day) => {
+            const isActive = day.date === selectedDate;
             return (
-              <div key={day} className={cn(
-                "flex-shrink-0 w-16 h-20 rounded-[16px] flex flex-col items-center justify-center gap-1 transition-colors",
-                isActive ? "bg-[#D4AF37] text-white shadow-lg shadow-[#D4AF37]/20" : "bg-white text-[#2C2C2C] border border-gray-100"
-              )}>
-                <span className="text-[10px] uppercase tracking-widest opacity-80">{day.split(' ')[0]}</span>
-                <span className="text-lg font-medium">{day.split(' ')[1]}</span>
-              </div>
+              <button 
+                key={day.date} 
+                onClick={() => setSelectedDate(day.date)}
+                className={cn(
+                  "flex-shrink-0 w-16 h-20 rounded-[16px] flex flex-col items-center justify-center gap-1 transition-colors",
+                  isActive ? "bg-[#D4AF37] text-white shadow-lg shadow-[#D4AF37]/20" : "bg-white text-[#2C2C2C] border border-gray-100 hover:border-[#D4AF37]/50"
+                )}
+              >
+                <span className="text-[10px] uppercase tracking-widest opacity-80">{day.label.split(' ')[0]}</span>
+                <span className="text-lg font-medium">{day.label.split(' ')[1]}</span>
+              </button>
             );
           })}
         </div>
@@ -857,10 +957,27 @@ const CRMScreen = () => {
 
       {/* Schedule Grid */}
       <div className="px-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h3 className="font-serif text-xl text-[#2C2C2C]">Schedule</h3>
           <span className="text-xs font-medium text-[#D4AF37] bg-[#F4E8C8]/50 px-3 py-1 rounded-full">{filteredAppointments.length} Appts</span>
         </div>
+        
+        {/* Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-6 no-scrollbar">
+          {['All', 'Booked', 'Blocked', 'Completed'].map((filter) => (
+            <button 
+              key={filter} 
+              onClick={() => setActiveFilter(filter)}
+              className={cn(
+                "px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase whitespace-nowrap transition-colors",
+                activeFilter === filter ? "bg-[#2C2C2C] text-white" : "border border-gray-200 text-[#8E8E8E] hover:border-[#D4AF37]/50"
+              )}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+
         <div className="relative border-l-2 border-gray-100 ml-4 space-y-8 pb-8">
           {filteredAppointments.length === 0 ? (
             <p className="text-sm text-[#8E8E8E] pl-6">No appointments match your search.</p>
@@ -873,7 +990,9 @@ const CRMScreen = () => {
                   apt.status === 'completed' ? "bg-green-400" : apt.status === 'blocked' ? "bg-gray-300" : "bg-[#D4AF37]"
                 )} />
                 
-                <p className="text-xs text-[#8E8E8E] font-medium mb-3">{apt.startTime} - {apt.endTime}</p>
+                <p className="text-xs text-[#8E8E8E] font-medium mb-3">
+                  {apt.isAllDay ? 'All Day' : `${apt.startTime} - ${apt.endTime}`}
+                </p>
                 
                 {apt.status === 'blocked' ? (
                   <div className="h-16 rounded-[20px] bg-gray-50 border border-gray-100 flex items-center justify-center border-dashed">
@@ -935,37 +1054,40 @@ const CRMScreen = () => {
         </div>
       </div>
 
-      {/* FAB Menu */}
-      <AnimatePresence>
-        {isFabOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            className="fixed bottom-40 right-6 flex flex-col items-end gap-3 z-40"
-          >
-            <button
-              onClick={() => { setIsBlockModalOpen(true); setIsFabOpen(false); }}
-              className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full luxury-shadow text-sm font-medium text-[#2C2C2C] hover:bg-gray-50 transition-colors"
+      {/* FAB Container */}
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto pointer-events-none z-40 h-full">
+        {/* FAB Menu */}
+        <AnimatePresence>
+          {isFabOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="absolute bottom-40 right-6 flex flex-col items-end gap-3 pointer-events-auto"
             >
-              <span>Block Time</span>
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
-                <Clock size={16} />
-              </div>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <button
+                onClick={() => { setIsBlockModalOpen(true); setIsFabOpen(false); }}
+                className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full luxury-shadow text-sm font-medium text-[#2C2C2C] hover:bg-gray-50 transition-colors"
+              >
+                <span>Block Time</span>
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
+                  <Clock size={16} />
+                </div>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* FAB */}
-      <button 
-        onClick={() => setIsFabOpen(!isFabOpen)}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl z-40 hover:scale-105 transition-transform"
-      >
-        <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
-          <Plus size={24} />
-        </motion.div>
-      </button>
+        {/* FAB */}
+        <button 
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className="absolute bottom-24 right-6 w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl pointer-events-auto hover:scale-105 transition-transform"
+        >
+          <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
+            <Plus size={24} />
+          </motion.div>
+        </button>
+      </div>
 
       {/* Block Time Modal */}
       <AnimatePresence>
@@ -993,30 +1115,140 @@ const CRMScreen = () => {
 
               <div className="space-y-4 mb-8">
                 <div>
-                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Start Time</label>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Date</label>
                   <input
-                    type="time"
-                    value={blockStart}
-                    onChange={(e) => setBlockStart(e.target.value)}
+                    type="date"
+                    value={blockDate}
+                    onChange={(e) => setBlockDate(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">End Time</label>
-                  <input
-                    type="time"
-                    value={blockEnd}
-                    onChange={(e) => setBlockEnd(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
-                  />
+                
+                <div className="flex items-center justify-between py-2">
+                  <label className="text-sm font-medium text-[#2C2C2C]">All Day</label>
+                  <button 
+                    onClick={() => setIsAllDay(!isAllDay)}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-colors relative",
+                      isAllDay ? "bg-[#D4AF37]" : "bg-gray-200"
+                    )}
+                  >
+                    <motion.div 
+                      className="w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm"
+                      animate={{ left: isAllDay ? '26px' : '2px' }}
+                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    />
+                  </button>
                 </div>
+
+                <AnimatePresence>
+                  {!isAllDay && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="space-y-4 overflow-hidden"
+                    >
+                      <div>
+                        <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Start Time</label>
+                        <input
+                          type="time"
+                          value={blockStart}
+                          onChange={(e) => setBlockStart(e.target.value)}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">End Time</label>
+                        <input
+                          type="time"
+                          value={blockEnd}
+                          onChange={(e) => setBlockEnd(e.target.value)}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
+
+              {blockError && (
+                <p className="text-xs text-red-500 mb-4 text-center">{blockError}</p>
+              )}
 
               <button
                 onClick={handleBlockTime}
                 className="w-full bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95"
               >
                 Save Blocked Time
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Client Modal */}
+      <AnimatePresence>
+        {isAddClientModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsAddClientModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Add New Client</h3>
+                <button onClick={() => setIsAddClientModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Name</label>
+                  <input
+                    type="text"
+                    value={newClientName}
+                    onChange={(e) => setNewClientName(e.target.value)}
+                    placeholder="Client Name"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={newClientPhone}
+                    onChange={(e) => setNewClientPhone(e.target.value)}
+                    placeholder="Phone Number"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Notes</label>
+                  <textarea
+                    value={newClientNotes}
+                    onChange={(e) => setNewClientNotes(e.target.value)}
+                    placeholder="Any specific requests or notes..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-24"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveClient}
+                disabled={!newClientName}
+                className="w-full bg-[#2C2C2C] disabled:bg-gray-300 text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95"
+              >
+                Save Client
               </button>
             </motion.div>
           </div>
@@ -1031,12 +1263,37 @@ const ClientArchiveScreen = () => {
   const client = MOCK_CLIENTS.find(c => c.id === id) || MOCK_CLIENTS[0];
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [newNoteTags, setNewNoteTags] = useState('');
 
   const handleGenerateRecommendation = async () => {
     setIsGenerating(true);
     const result = await generateServiceRecommendation(client);
     setRecommendation(result);
     setIsGenerating(false);
+  };
+
+  const handleSaveNote = () => {
+    if (!newNoteContent.trim()) return;
+    
+    const tags = newNoteTags.split(',').map(t => t.trim()).filter(t => t);
+    const newNote = {
+      id: `note-${Date.now()}`,
+      content: newNoteContent,
+      tags,
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    };
+    
+    if (!client.richNotes) {
+      client.richNotes = [];
+    }
+    client.richNotes.unshift(newNote);
+    
+    setIsAddNoteModalOpen(false);
+    setNewNoteContent('');
+    setNewNoteTags('');
   };
 
   return (
@@ -1075,13 +1332,72 @@ const ClientArchiveScreen = () => {
         </div>
       </div>
 
+      {/* Quick Summary */}
+      <div className="px-6 mb-8">
+        <div className="bg-[#F4E8C8]/20 rounded-[24px] p-6 border border-[#D4AF37]/20">
+          <h3 className="font-serif text-lg text-[#2C2C2C] mb-4 flex items-center gap-2">
+            <Sparkles size={18} className="text-[#D4AF37]" />
+            Quick Summary
+          </h3>
+          <div className="space-y-4">
+            {client.preferredStyles && client.preferredStyles.length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-[#8E8E8E] mb-1">Preferred Styles</p>
+                <p className="text-sm text-[#2C2C2C] font-medium">{client.preferredStyles.join(', ')}</p>
+              </div>
+            )}
+            {client.allergies && client.allergies.length > 0 && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-red-400 mb-1">Allergies / Sensitivities</p>
+                <p className="text-sm text-[#2C2C2C] font-medium">{client.allergies.join(', ')}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-[#8E8E8E] mb-1">Last Service Date</p>
+              <p className="text-sm text-[#2C2C2C] font-medium">{client.history[0]?.date || client.lastVisit}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Formula & Notes */}
       <div className="px-6 mb-10">
-        <h3 className="font-serif text-xl text-[#2C2C2C] mb-4">Formula & Notes</h3>
-        <div className="bg-[#FFFDF9] border border-[#D4AF37]/20 rounded-[24px] p-6 luxury-shadow">
-          <p className="text-sm text-[#2C2C2C]/80 leading-relaxed font-serif italic">
-            "{client.notes}"
-          </p>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-serif text-xl text-[#2C2C2C]">Formula & Notes</h3>
+          <button 
+            onClick={() => setIsAddNoteModalOpen(true)}
+            className="text-[#D4AF37] text-xs font-medium uppercase tracking-widest flex items-center gap-1 bg-[#F4E8C8]/30 px-3 py-1.5 rounded-full"
+          >
+            <Plus size={14} /> Add Note
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {client.richNotes && client.richNotes.length > 0 ? (
+            client.richNotes.map(note => (
+              <div key={note.id} className="bg-[#FFFDF9] border border-[#D4AF37]/20 rounded-[24px] p-6 luxury-shadow">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-[10px] text-[#8E8E8E] uppercase tracking-widest">{note.date}</span>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {note.tags.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 bg-[#F4E8C8]/50 text-[#D4AF37] text-[9px] uppercase tracking-widest rounded-full font-medium">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="markdown-body text-sm text-[#2C2C2C]/80 leading-relaxed font-serif prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-[#2C2C2C] prose-strong:font-semibold">
+                  <Markdown>{note.content}</Markdown>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="bg-[#FFFDF9] border border-[#D4AF37]/20 rounded-[24px] p-6 luxury-shadow">
+              <p className="text-sm text-[#2C2C2C]/80 leading-relaxed font-serif italic">
+                "{client.notes}"
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1154,6 +1470,67 @@ const ClientArchiveScreen = () => {
         <button className="flex-1 border border-[#2C2C2C] text-[#2C2C2C] py-4 rounded-full text-xs font-medium tracking-widest uppercase bg-[#FAF9F6]/80 backdrop-blur-md">Message</button>
         <button className="flex-1 bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl">Book New</button>
       </div>
+
+      {/* Add Note Modal */}
+      <AnimatePresence>
+        {isAddNoteModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsAddNoteModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Add Note</h3>
+                <button onClick={() => setIsAddNoteModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2 flex justify-between">
+                    <span>Note Content</span>
+                    <span className="text-[9px] lowercase normal-case">Supports Markdown</span>
+                  </label>
+                  <textarea
+                    value={newNoteContent}
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                    placeholder="E.g., **Skin Prep:** Used water-based primer..."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-32 font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Tags</label>
+                  <input
+                    type="text"
+                    value={newNoteTags}
+                    onChange={(e) => setNewNoteTags(e.target.value)}
+                    placeholder="E.g., Skin Prep, Product Prefs (comma separated)"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSaveNote}
+                disabled={!newNoteContent.trim()}
+                className="w-full bg-[#2C2C2C] disabled:bg-gray-300 text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95"
+              >
+                Save Note
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1308,8 +1685,16 @@ const ClientListScreen = () => {
             placeholder="Search clients by name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-full py-3.5 pl-11 pr-4 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all luxury-shadow"
+            className="w-full bg-white border border-gray-200 rounded-full py-3.5 pl-11 pr-10 text-sm text-[#2C2C2C] placeholder-[#8E8E8E] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all luxury-shadow"
           />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -1384,12 +1769,14 @@ const ArtistProfileScreen = () => {
       <Header 
         title="My Artist Profile" 
         rightElement={
-          <button 
-            onClick={() => setIsEditing(!isEditing)} 
-            className="text-[#D4AF37] text-sm font-medium tracking-widest uppercase"
-          >
-            {isEditing ? 'Save' : 'Edit'}
-          </button>
+          isEditing ? (
+            <button 
+              onClick={() => setIsEditing(false)} 
+              className="text-[#D4AF37] text-sm font-medium tracking-widest uppercase"
+            >
+              Save
+            </button>
+          ) : null
         } 
       />
       
@@ -1488,19 +1875,22 @@ const ArtistProfileScreen = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-serif text-lg text-[#2C2C2C]">My Services</h3>
-            {isEditing && (
-              <button className="text-[#D4AF37] text-xs font-medium uppercase tracking-widest flex items-center gap-1 bg-[#F4E8C8]/30 px-3 py-1.5 rounded-full">
-                <Plus size={14} /> Add
-              </button>
-            )}
           </div>
-          <div className="space-y-4">
+          <Reorder.Group axis="y" values={services} onReorder={setServices} className="space-y-4">
             {services.map((service, idx) => (
-              <div key={service.id} className="bg-white rounded-[24px] p-5 luxury-shadow border border-gray-50 relative">
+              <Reorder.Item 
+                key={service.id} 
+                value={service} 
+                dragListener={isEditing}
+                className={cn(
+                  "bg-white rounded-[24px] p-5 luxury-shadow border border-gray-50 relative",
+                  isEditing && "cursor-grab active:cursor-grabbing"
+                )}
+              >
                 {isEditing && (
                   <button 
                     onClick={() => setServices(services.filter((_, i) => i !== idx))}
-                    className="absolute top-4 right-4 text-red-400 hover:text-red-500 transition-colors"
+                    className="absolute top-4 right-4 text-red-400 hover:text-red-500 transition-colors z-10"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -1508,17 +1898,22 @@ const ArtistProfileScreen = () => {
                 
                 {isEditing ? (
                   <div className="space-y-3 pr-6">
-                    <input 
-                      type="text" 
-                      value={service.name}
-                      onChange={(e) => {
-                        const newServices = [...services];
-                        newServices[idx].name = e.target.value;
-                        setServices(newServices);
-                      }}
-                      className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                      placeholder="Service Name"
-                    />
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-gray-300 cursor-grab active:cursor-grabbing">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                      </div>
+                      <input 
+                        type="text" 
+                        value={service.name}
+                        onChange={(e) => {
+                          const newServices = [...services];
+                          newServices[idx].name = e.target.value;
+                          setServices(newServices);
+                        }}
+                        className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        placeholder="Service Name"
+                      />
+                    </div>
                     <div className="flex gap-3">
                       <input 
                         type="number" 
@@ -1610,21 +2005,40 @@ const ArtistProfileScreen = () => {
                     </div>
                   </>
                 )}
-              </div>
+              </Reorder.Item>
             ))}
-          </div>
+          </Reorder.Group>
+          
+          {isEditing && (
+            <button 
+              onClick={() => setServices([...services, { id: `s-${Date.now()}`, name: '', price: 0, duration: '', description: '', materialsUsed: '', stylingNotes: '' }])}
+              className="w-full mt-4 py-4 border-2 border-dashed border-[#D4AF37] text-[#D4AF37] rounded-[24px] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#F4E8C8]/20 transition-colors bg-[#F4E8C8]/10 shadow-sm"
+            >
+              <Plus size={18} /> Add New Service
+            </button>
+          )}
         </div>
 
         {/* Settings / Logout */}
         {!isEditing && (
-          <button onClick={() => navigate('/role-select')} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group mt-8">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#FAF9F6] flex items-center justify-center text-red-400 group-hover:bg-red-50 transition-colors">
-                <LogOut size={18} />
+          <div className="space-y-4 mt-8">
+            <button onClick={() => setIsEditing(true)} className="w-full bg-[#2C2C2C] text-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-colors">
+                  <Settings size={18} />
+                </div>
+                <span className="font-medium">Edit Profile</span>
               </div>
-              <span className="font-medium text-red-500">Switch Role / Logout</span>
-            </div>
-          </button>
+            </button>
+            <button onClick={() => navigate('/role-select')} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-[#FAF9F6] flex items-center justify-center text-red-400 group-hover:bg-red-50 transition-colors">
+                  <LogOut size={18} />
+                </div>
+                <span className="font-medium text-red-500">Switch Role / Logout</span>
+              </div>
+            </button>
+          </div>
         )}
       </div>
     </motion.div>
