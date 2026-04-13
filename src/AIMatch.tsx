@@ -114,41 +114,87 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
     </div>
   );
 
-  const renderWeddingStep2 = () => (
-    <div className="space-y-6">
-      <h2 className="font-serif text-3xl text-[#2C2C2C] mb-8 text-center leading-tight">What's your bridal style?</h2>
+  const renderWeddingStep2 = () => {
+    const BRIDAL_STYLES = [
+      { id: 'Korean', label: 'Korean', image: 'https://images.unsplash.com/photo-1541216970279-affbfdd55aa8?w=400&q=80' },
+      { id: 'Chinese', label: 'Chinese', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&q=80' },
+      { id: 'Thai', label: 'Thai', image: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&q=80' },
+      { id: 'Western Classic', label: 'Western Classic', image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&q=80' },
+      { id: 'Modern Glam', label: 'Modern Glam', image: 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=400&q=80' },
+    ];
+
+    const MAKEUP_FINISHES = [
+      { id: 'Nude', label: 'Nude', image: 'https://images.unsplash.com/photo-1554050857-c84a8abdb5e5?w=400&q=80' },
+      { id: 'Matte', label: 'Matte', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&q=80' },
+      { id: 'Pearlescent', label: 'Pearlescent', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&q=80' },
+      { id: 'Dewy', label: 'Dewy', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80' },
+      { id: 'Soft Glam', label: 'Soft Glam', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80' },
+    ];
+
+    return (
       <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium text-[#2C2C2C] mb-3">Bridal Style</p>
-          <div className="flex flex-wrap gap-2">
-            {['Korean', 'Chinese', 'Thai', 'Western Classic', 'Modern Glam'].map(opt => (
-              <button 
-                key={opt}
-                onClick={() => handleSelect('bridalStyle', opt)}
-                className={cn("px-4 py-2 rounded-full border text-sm transition-colors", selections.bridalStyle === opt ? "border-[#D4AF37] bg-[#F4E8C8]/30 text-[#D4AF37]" : "border-gray-200 text-[#8E8E8E] bg-white")}
-              >
-                {opt}
-              </button>
-            ))}
+        <h2 className="font-serif text-3xl text-[#2C2C2C] mb-8 text-center leading-tight">What's your bridal style?</h2>
+        <div className="space-y-8">
+          <div>
+            <p className="text-sm font-medium text-[#2C2C2C] mb-4">Bridal Style</p>
+            <div className="grid grid-cols-2 gap-3">
+              {BRIDAL_STYLES.map(style => (
+                <button 
+                  key={style.id}
+                  onClick={() => handleSelect('bridalStyle', style.id)}
+                  className={cn(
+                    "relative rounded-2xl overflow-hidden aspect-square group transition-all",
+                    selections.bridalStyle === style.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                  )}
+                >
+                  <img src={style.image} alt={style.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className={cn(
+                    "absolute inset-0 flex items-end p-3 transition-colors",
+                    selections.bridalStyle === style.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                  )}>
+                    <span className="text-white font-medium text-sm drop-shadow-md">{style.label}</span>
+                  </div>
+                  {selections.bridalStyle === style.id && (
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
+                      <CheckCircle2 size={14} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-[#2C2C2C] mb-3">Makeup Finish</p>
-          <div className="flex flex-wrap gap-2">
-            {['Nude', 'Matte', 'Pearlescent', 'Dewy', 'Soft Glam'].map(opt => (
-              <button 
-                key={opt}
-                onClick={() => handleSelect('makeupFinish', opt)}
-                className={cn("px-4 py-2 rounded-full border text-sm transition-colors", selections.makeupFinish === opt ? "border-[#D4AF37] bg-[#F4E8C8]/30 text-[#D4AF37]" : "border-gray-200 text-[#8E8E8E] bg-white")}
-              >
-                {opt}
-              </button>
-            ))}
+          <div>
+            <p className="text-sm font-medium text-[#2C2C2C] mb-4">Makeup Finish</p>
+            <div className="grid grid-cols-2 gap-3">
+              {MAKEUP_FINISHES.map(finish => (
+                <button 
+                  key={finish.id}
+                  onClick={() => handleSelect('makeupFinish', finish.id)}
+                  className={cn(
+                    "relative rounded-2xl overflow-hidden aspect-square group transition-all",
+                    selections.makeupFinish === finish.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                  )}
+                >
+                  <img src={finish.image} alt={finish.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className={cn(
+                    "absolute inset-0 flex items-end p-3 transition-colors",
+                    selections.makeupFinish === finish.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                  )}>
+                    <span className="text-white font-medium text-sm drop-shadow-md">{finish.label}</span>
+                  </div>
+                  {selections.makeupFinish === finish.id && (
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
+                      <CheckCircle2 size={14} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderWeddingStep3 = () => (
     <div className="space-y-6 flex flex-col h-full">
@@ -203,41 +249,86 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
     </div>
   );
 
-  const renderDailyStep2 = () => (
-    <div className="space-y-6">
-      <h2 className="font-serif text-3xl text-[#2C2C2C] mb-8 text-center leading-tight">What's your preferred style?</h2>
+  const renderDailyStep2 = () => {
+    const MAKEUP_STYLES = [
+      { id: 'Natural', label: 'Natural', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&q=80' },
+      { id: 'Korean', label: 'Korean', image: 'https://images.unsplash.com/photo-1541216970279-affbfdd55aa8?w=400&q=80' },
+      { id: 'Thai', label: 'Thai', image: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&q=80' },
+      { id: 'Soft Glam', label: 'Soft Glam', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80' },
+      { id: 'Creative', label: 'Creative', image: 'https://images.unsplash.com/photo-1512496015851-a1c825b2725b?w=400&q=80' },
+    ];
+
+    const FINISH_PREFERENCES = [
+      { id: 'Matte', label: 'Matte', image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&q=80' },
+      { id: 'Dewy', label: 'Dewy', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80' },
+      { id: 'Satin', label: 'Satin', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&q=80' },
+      { id: 'Glowy', label: 'Glowy', image: 'https://images.unsplash.com/photo-1554050857-c84a8abdb5e5?w=400&q=80' },
+    ];
+
+    return (
       <div className="space-y-6">
-        <div>
-          <p className="text-sm font-medium text-[#2C2C2C] mb-3">Makeup Style</p>
-          <div className="flex flex-wrap gap-2">
-            {['Natural', 'Korean', 'Thai', 'Soft Glam', 'Creative'].map(opt => (
-              <button 
-                key={opt}
-                onClick={() => handleSelect('makeupStyle', opt)}
-                className={cn("px-4 py-2 rounded-full border text-sm transition-colors", selections.makeupStyle === opt ? "border-[#D4AF37] bg-[#F4E8C8]/30 text-[#D4AF37]" : "border-gray-200 text-[#8E8E8E] bg-white")}
-              >
-                {opt}
-              </button>
-            ))}
+        <h2 className="font-serif text-3xl text-[#2C2C2C] mb-8 text-center leading-tight">What's your preferred style?</h2>
+        <div className="space-y-8">
+          <div>
+            <p className="text-sm font-medium text-[#2C2C2C] mb-4">Makeup Style</p>
+            <div className="grid grid-cols-2 gap-3">
+              {MAKEUP_STYLES.map(style => (
+                <button 
+                  key={style.id}
+                  onClick={() => handleSelect('makeupStyle', style.id)}
+                  className={cn(
+                    "relative rounded-2xl overflow-hidden aspect-square group transition-all",
+                    selections.makeupStyle === style.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                  )}
+                >
+                  <img src={style.image} alt={style.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className={cn(
+                    "absolute inset-0 flex items-end p-3 transition-colors",
+                    selections.makeupStyle === style.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                  )}>
+                    <span className="text-white font-medium text-sm drop-shadow-md">{style.label}</span>
+                  </div>
+                  {selections.makeupStyle === style.id && (
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
+                      <CheckCircle2 size={14} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <p className="text-sm font-medium text-[#2C2C2C] mb-3">Finish Preferences</p>
-          <div className="flex flex-wrap gap-2">
-            {['Matte', 'Dewy', 'Satin', 'Glowy'].map(opt => (
-              <button 
-                key={opt}
-                onClick={() => handleSelect('makeupFinish', opt)}
-                className={cn("px-4 py-2 rounded-full border text-sm transition-colors", selections.makeupFinish === opt ? "border-[#D4AF37] bg-[#F4E8C8]/30 text-[#D4AF37]" : "border-gray-200 text-[#8E8E8E] bg-white")}
-              >
-                {opt}
-              </button>
-            ))}
+          <div>
+            <p className="text-sm font-medium text-[#2C2C2C] mb-4">Finish Preferences</p>
+            <div className="grid grid-cols-2 gap-3">
+              {FINISH_PREFERENCES.map(finish => (
+                <button 
+                  key={finish.id}
+                  onClick={() => handleSelect('makeupFinish', finish.id)}
+                  className={cn(
+                    "relative rounded-2xl overflow-hidden aspect-square group transition-all",
+                    selections.makeupFinish === finish.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                  )}
+                >
+                  <img src={finish.image} alt={finish.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className={cn(
+                    "absolute inset-0 flex items-end p-3 transition-colors",
+                    selections.makeupFinish === finish.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                  )}>
+                    <span className="text-white font-medium text-sm drop-shadow-md">{finish.label}</span>
+                  </div>
+                  {selections.makeupFinish === finish.id && (
+                    <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
+                      <CheckCircle2 size={14} />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderDailyStep3 = () => (
     <div className="space-y-6 flex flex-col h-full">
@@ -280,7 +371,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
         {type === 'daily' && step === 3 && renderDailyStep3()}
       </div>
 
-      <div className="fixed bottom-[60px] left-0 right-0 px-6 pb-6 pt-10 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] via-80% to-transparent max-w-md mx-auto z-40 flex flex-col gap-4">
+      <div className="fixed bottom-0 left-0 right-0 px-6 pb-6 pt-10 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] via-80% to-transparent max-w-md mx-auto z-40 flex flex-col gap-4">
         {step === 3 && (
           <div className="flex flex-col gap-4">
             <textarea

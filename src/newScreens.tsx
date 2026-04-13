@@ -4,6 +4,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
+import Markdown from 'react-markdown';
 
 export const PublicArtistProfileScreen = ({ Header }: any) => {
   const { id } = useParams();
@@ -13,6 +14,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
   
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
@@ -63,7 +65,11 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
           <h3 className="font-serif text-xl text-[#2C2C2C] mb-4 px-2">Work Gallery</h3>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 px-2">
             {artist.portfolio.map((img, idx) => (
-              <div key={idx} className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow relative">
+              <div 
+                key={idx} 
+                onClick={() => setSelectedImageIndex(idx)}
+                className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow relative cursor-pointer"
+              >
                 <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-white">After</div>
               </div>
@@ -81,7 +87,9 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                   <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
                   <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
                 </div>
-                <p className="text-sm text-[#8E8E8E] mb-4">{service.description}</p>
+                <div className="text-sm text-[#8E8E8E] mb-4 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                  <Markdown>{service.description}</Markdown>
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
                     <Clock size={12} />
@@ -98,14 +106,18 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                     <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
                       {service.materialsUsed && (
                         <div className="mb-2">
-                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px]">Materials:</span>
-                          <p className="mt-1 text-white/90">{service.materialsUsed}</p>
+                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1">Materials:</span>
+                          <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                            <Markdown>{service.materialsUsed}</Markdown>
+                          </div>
                         </div>
                       )}
                       {service.stylingNotes && (
                         <div>
-                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px]">Notes:</span>
-                          <p className="mt-1 text-white/90">{service.stylingNotes}</p>
+                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Notes:</span>
+                          <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                            <Markdown>{service.stylingNotes}</Markdown>
+                          </div>
                         </div>
                       )}
                       <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
@@ -240,6 +252,51 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
           Book Now
         </button>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedImageIndex !== null && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center touch-none"
+          >
+            <button 
+              onClick={() => setSelectedImageIndex(null)} 
+              className="absolute top-6 right-6 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white z-[110] hover:bg-white/20 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <motion.div 
+              key={selectedImageIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.7}
+              onDragEnd={(e, { offset }) => {
+                const swipe = offset.x;
+                if (swipe < -50 && selectedImageIndex < artist.portfolio.length - 1) {
+                  setSelectedImageIndex(selectedImageIndex + 1);
+                } else if (swipe > 50 && selectedImageIndex > 0) {
+                  setSelectedImageIndex(selectedImageIndex - 1);
+                }
+              }}
+              className="w-full h-full flex items-center justify-center absolute cursor-grab active:cursor-grabbing"
+            >
+              <img src={artist.portfolio[selectedImageIndex]} className="w-full h-full object-contain p-4" referrerPolicy="no-referrer" draggable={false} />
+            </motion.div>
+            
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-[110]">
+              {artist.portfolio.map((_, i) => (
+                <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-all", i === selectedImageIndex ? "bg-white w-3" : "bg-white/30")} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

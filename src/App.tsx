@@ -13,6 +13,8 @@ import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS
 import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen } from './newScreens';
 import { AIMatchEntryScreen, AIMatchFlowScreen, AIMatchLoadingScreen, MatchResultScreen } from './AIMatch';
 import { generateServiceRecommendation } from './services/geminiService';
+import MDEditor from '@uiw/react-md-editor';
+import { ChecklistCategory, ChecklistTask, CRMClient } from './types';
 
 // --- Shared Components ---
 
@@ -1741,6 +1743,7 @@ const ArtistProfileScreen = () => {
   const [priceErrors, setPriceErrors] = useState<Record<string, string>>({});
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -1800,11 +1803,21 @@ const ArtistProfileScreen = () => {
         )}
         
         {isEditing ? (
-          <input 
-            type="text" 
-            defaultValue={artist.title} 
-            className="text-sm text-[#8E8E8E] text-center bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] mt-1 transition-colors" 
-          />
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <input 
+              type="text" 
+              defaultValue={artist.title} 
+              className="text-sm text-[#8E8E8E] text-right bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-32" 
+              placeholder="Title"
+            />
+            <span className="text-sm text-[#8E8E8E]">·</span>
+            <input 
+              type="text" 
+              defaultValue={artist.city} 
+              className="text-sm text-[#8E8E8E] text-left bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-24" 
+              placeholder="City"
+            />
+          </div>
         ) : (
           <p className="text-sm text-[#8E8E8E]">{artist.title} · {artist.city}</p>
         )}
@@ -1841,9 +1854,10 @@ const ArtistProfileScreen = () => {
                   key={img} 
                   value={img}
                   dragListener={isEditing}
+                  onClick={() => !isEditing && setSelectedImageIndex(idx)}
                   className={cn(
                     "relative flex-shrink-0 w-40 h-56 rounded-[24px] overflow-hidden luxury-shadow group transition-transform",
-                    isEditing && "cursor-grab active:cursor-grabbing"
+                    isEditing ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
                   )}
                 >
                   <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
@@ -1854,7 +1868,10 @@ const ArtistProfileScreen = () => {
                         <GripVertical size={16} />
                       </div>
                       <button 
-                        onClick={() => handleDeleteImage(idx)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteImage(idx);
+                        }}
                         className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 shadow-sm backdrop-blur-sm transition-colors z-10"
                       >
                         <Trash2 size={14} />
@@ -1964,40 +1981,54 @@ const ArtistProfileScreen = () => {
                         placeholder="Duration (e.g., 2 hrs)"
                       />
                     </div>
-                    <textarea 
-                      value={service.description}
-                      onChange={(e) => {
-                        const newServices = [...services];
-                        newServices[idx].description = e.target.value;
-                        setServices(newServices);
-                      }}
-                      className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
-                      placeholder="Service Description"
-                    />
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Materials Used (Optional)</label>
-                      <textarea 
-                        value={service.materialsUsed || ''}
-                        onChange={(e) => {
+                    <div data-color-mode="light">
+                      <MDEditor
+                        value={service.description}
+                        onChange={(val) => {
                           const newServices = [...services];
-                          newServices[idx].materialsUsed = e.target.value;
+                          newServices[idx].description = val || '';
                           setServices(newServices);
                         }}
-                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
-                        placeholder="e.g., MAC, Charlotte Tilbury..."
+                        preview="edit"
+                        height={120}
+                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
+                        textareaProps={{
+                          placeholder: "Service Description"
+                        }}
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Styling Notes (Optional)</label>
-                      <textarea 
-                        value={service.stylingNotes || ''}
-                        onChange={(e) => {
+                    <div className="space-y-1" data-color-mode="light">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Materials Used (Optional)</label>
+                      <MDEditor
+                        value={service.materialsUsed || ''}
+                        onChange={(val) => {
                           const newServices = [...services];
-                          newServices[idx].stylingNotes = e.target.value;
+                          newServices[idx].materialsUsed = val || '';
                           setServices(newServices);
                         }}
-                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] resize-none h-16"
-                        placeholder="e.g., Suitable for outdoor weddings..."
+                        preview="edit"
+                        height={100}
+                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
+                        textareaProps={{
+                          placeholder: "e.g., MAC, Charlotte Tilbury..."
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1" data-color-mode="light">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Styling Notes (Optional)</label>
+                      <MDEditor
+                        value={service.stylingNotes || ''}
+                        onChange={(val) => {
+                          const newServices = [...services];
+                          newServices[idx].stylingNotes = val || '';
+                          setServices(newServices);
+                        }}
+                        preview="edit"
+                        height={100}
+                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
+                        textareaProps={{
+                          placeholder: "e.g., Suitable for outdoor weddings..."
+                        }}
                       />
                     </div>
                   </div>
@@ -2007,20 +2038,26 @@ const ArtistProfileScreen = () => {
                       <h4 className="font-medium text-[#2C2C2C]">{service.name}</h4>
                       <span className="font-serif text-[#D4AF37]">${service.price}</span>
                     </div>
-                    <p className="text-xs text-[#8E8E8E] mb-3">{service.description}</p>
+                    <div className="text-xs text-[#8E8E8E] mb-3 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                      <Markdown>{service.description}</Markdown>
+                    </div>
                     
                     {(service.materialsUsed || service.stylingNotes) && (
                       <div className="space-y-2 mb-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
                         {service.materialsUsed && (
                           <div>
-                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C]">Materials: </span>
-                            <span className="text-xs text-[#8E8E8E]">{service.materialsUsed}</span>
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C] block mb-1">Materials:</span>
+                            <div className="text-xs text-[#8E8E8E] prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                              <Markdown>{service.materialsUsed}</Markdown>
+                            </div>
                           </div>
                         )}
                         {service.stylingNotes && (
                           <div>
-                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C]">Notes: </span>
-                            <span className="text-xs text-[#8E8E8E]">{service.stylingNotes}</span>
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C] block mb-1 mt-2">Notes:</span>
+                            <div className="text-xs text-[#8E8E8E] prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                              <Markdown>{service.stylingNotes}</Markdown>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -2131,6 +2168,51 @@ const ArtistProfileScreen = () => {
             className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#2C2C2C] text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl z-50 whitespace-nowrap"
           >
             {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedImageIndex !== null && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center touch-none"
+          >
+            <button 
+              onClick={() => setSelectedImageIndex(null)} 
+              className="absolute top-6 right-6 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white z-[110] hover:bg-white/20 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <motion.div 
+              key={selectedImageIndex}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.7}
+              onDragEnd={(e, { offset }) => {
+                const swipe = offset.x;
+                if (swipe < -50 && selectedImageIndex < portfolio.length - 1) {
+                  setSelectedImageIndex(selectedImageIndex + 1);
+                } else if (swipe > 50 && selectedImageIndex > 0) {
+                  setSelectedImageIndex(selectedImageIndex - 1);
+                }
+              }}
+              className="w-full h-full flex items-center justify-center absolute cursor-grab active:cursor-grabbing"
+            >
+              <img src={portfolio[selectedImageIndex]} className="w-full h-full object-contain p-4" referrerPolicy="no-referrer" draggable={false} />
+            </motion.div>
+            
+            <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-[110]">
+              {portfolio.map((_, i) => (
+                <div key={i} className={cn("w-1.5 h-1.5 rounded-full transition-all", i === selectedImageIndex ? "bg-white w-3" : "bg-white/30")} />
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
