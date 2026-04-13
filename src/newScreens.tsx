@@ -10,6 +10,9 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
   const navigate = useNavigate();
   const artist = MOCK_MUAS.find(m => m.id === id) || MOCK_MUAS[0];
   const [isFavorite, setIsFavorite] = useState(false);
+  
+  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
@@ -73,7 +76,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
           <h3 className="font-serif text-xl text-[#2C2C2C] mb-4 px-2">Service Packages</h3>
           <div className="space-y-4">
             {artist.services.map((service, idx) => (
-              <div key={idx} className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50">
+              <div key={idx} className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50 relative group">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
                   <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
@@ -88,8 +91,92 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                     Select
                   </button>
                 </div>
+
+                {/* Tooltip */}
+                {(service.materialsUsed || service.stylingNotes) && (
+                  <div className="absolute left-0 right-0 -top-2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                    <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
+                      {service.materialsUsed && (
+                        <div className="mb-2">
+                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px]">Materials:</span>
+                          <p className="mt-1 text-white/90">{service.materialsUsed}</p>
+                        </div>
+                      )}
+                      {service.stylingNotes && (
+                        <div>
+                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px]">Notes:</span>
+                          <p className="mt-1 text-white/90">{service.stylingNotes}</p>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Availability Calendar */}
+        <div>
+          <h3 className="font-serif text-xl text-[#2C2C2C] mb-4 px-2">Availability</h3>
+          <div className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50">
+            {/* Date Selector */}
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 -mx-2 px-2">
+              {[...Array(7)].map((_, i) => {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                const isSelected = i === selectedDateIndex;
+                return (
+                  <div 
+                    key={i} 
+                    onClick={() => {
+                      setSelectedDateIndex(i);
+                      setSelectedTimeSlot(null);
+                    }}
+                    className={cn(
+                      "flex-shrink-0 w-14 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors",
+                      isSelected ? "bg-[#2C2C2C] text-white" : "bg-gray-50 text-[#8E8E8E] hover:bg-gray-100"
+                    )}
+                  >
+                    <span className="text-[10px] uppercase tracking-widest">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                    <span className={cn("text-lg font-serif", isSelected ? "text-[#D4AF37]" : "text-[#2C2C2C]")}>{date.getDate()}</span>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Time Slots */}
+            <div className="grid grid-cols-3 gap-3 mt-2">
+              {['09:00 AM', '10:30 AM', '01:00 PM', '03:30 PM', '05:00 PM'].map((time, i) => {
+                const isSelected = time === selectedTimeSlot;
+                return (
+                  <div 
+                    key={i} 
+                    onClick={() => setSelectedTimeSlot(time)}
+                    className={cn(
+                      "py-2 border rounded-xl text-center text-xs font-medium cursor-pointer transition-colors",
+                      isSelected 
+                        ? "border-[#D4AF37] bg-[#F4E8C8]/20 text-[#D4AF37]" 
+                        : "border-gray-100 text-[#2C2C2C] hover:border-[#D4AF37] hover:text-[#D4AF37]"
+                    )}
+                  >
+                    {time}
+                  </div>
+                );
+              })}
+            </div>
+            
+            {selectedTimeSlot && (
+              <motion.button 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => navigate(`/book/${artist.id}`)}
+                className="w-full mt-6 bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all"
+              >
+                Book {selectedTimeSlot}
+              </motion.button>
+            )}
           </div>
         </div>
 
@@ -148,7 +235,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
       </div>
 
       {/* 8. Fixed bottom button */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent z-40 max-w-md mx-auto">
         <button onClick={() => navigate(`/book/${artist.id}`)} className="w-full bg-[#2C2C2C] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-xl active:scale-95 transition-all">
           Book Now
         </button>
@@ -243,7 +330,7 @@ export const BookingScreen = ({ Header }: any) => {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 z-40 max-w-md mx-auto">
         <button 
           onClick={() => setIsConfirmModalOpen(true)} 
           disabled={!selectedServiceId || !selectedDate || !selectedTime}
@@ -449,11 +536,29 @@ export const OrderDetailsScreen = ({ Header }: any) => {
 
 export const SavedArtistsScreen = ({ Header }: any) => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMuas = MOCK_MUAS.filter(mua => 
+    mua.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header title="Saved Artists" showBack />
+      <div className="px-6 pt-6">
+        <div className="relative">
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8E8E8E]" />
+          <input 
+            type="text" 
+            placeholder="Search artists by name..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-gray-100 rounded-full py-3 pl-12 pr-4 text-sm focus:outline-none focus:border-[#D4AF37] luxury-shadow text-[#2C2C2C]"
+          />
+        </div>
+      </div>
       <div className="px-6 py-6 space-y-6">
-        {MOCK_MUAS.map(mua => (
+        {filteredMuas.map(mua => (
           <div key={mua.id} onClick={() => navigate(`/artist/${mua.id}`)} className="bg-white rounded-[24px] overflow-hidden luxury-shadow cursor-pointer active:scale-[0.98] transition-all">
             <div className="h-48 overflow-hidden relative">
               <img src={mua.portfolio[0]} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -467,6 +572,11 @@ export const SavedArtistsScreen = ({ Header }: any) => {
             </div>
           </div>
         ))}
+        {filteredMuas.length === 0 && (
+          <div className="text-center text-[#8E8E8E] py-10">
+            No artists found matching "{searchQuery}"
+          </div>
+        )}
       </div>
     </motion.div>
   );

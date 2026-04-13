@@ -18,7 +18,13 @@ import { generateServiceRecommendation } from './services/geminiService';
 
 const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   const location = useLocation();
-  if (location.pathname === '/role-select') return null;
+  
+  const mainTabs = [
+    '/home', '/checklist', '/ai-match', '/bookings', '/profile',
+    '/crm', '/crm/clients', '/crm/profile'
+  ];
+  
+  if (!mainTabs.includes(location.pathname)) return null;
 
   const navItems = role === 'bride' ? [
     { path: '/home', icon: Home, label: 'Home' },
@@ -1732,36 +1738,24 @@ const ArtistProfileScreen = () => {
   const artist = MOCK_MUAS[1]; // Elena Rostova
   const [portfolio, setPortfolio] = useState(artist.portfolio);
   const [services, setServices] = useState(artist.services);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [priceErrors, setPriceErrors] = useState<Record<string, string>>({});
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    // Required for Firefox
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', e.currentTarget.parentNode as any);
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (draggedIndex === null || draggedIndex === index) return;
-    
-    const newPortfolio = [...portfolio];
-    const draggedItem = newPortfolio[draggedIndex];
-    newPortfolio.splice(draggedIndex, 1);
-    newPortfolio.splice(index, 0, draggedItem);
-    
-    setDraggedIndex(index);
-    setPortfolio(newPortfolio);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleDeleteImage = (index: number) => {
-    setPortfolio(portfolio.filter((_, i) => i !== index));
+    setImageToDelete(index);
+  };
+
+  const confirmDeleteImage = () => {
+    if (imageToDelete !== null) {
+      setPortfolio(portfolio.filter((_, i) => i !== imageToDelete));
+      setImageToDelete(null);
+    }
   };
 
   return (
@@ -1771,8 +1765,13 @@ const ArtistProfileScreen = () => {
         rightElement={
           isEditing ? (
             <button 
-              onClick={() => setIsEditing(false)} 
-              className="text-[#D4AF37] text-sm font-medium tracking-widest uppercase"
+              onClick={() => {
+                if (Object.keys(priceErrors).length === 0) {
+                  setIsEditing(false);
+                }
+              }} 
+              disabled={Object.keys(priceErrors).length > 0}
+              className="text-[#D4AF37] text-sm font-medium tracking-widest uppercase disabled:opacity-50 transition-opacity"
             >
               Save
             </button>
@@ -1831,35 +1830,40 @@ const ArtistProfileScreen = () => {
             <h3 className="font-serif text-lg text-[#2C2C2C]">Portfolio</h3>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-6 px-6">
-            {portfolio.map((img, idx) => (
-              <div 
-                key={img} 
-                className={cn(
-                  "relative flex-shrink-0 w-40 h-56 rounded-[24px] overflow-hidden luxury-shadow group transition-transform",
-                  draggedIndex === idx ? "opacity-50 scale-95" : "opacity-100 scale-100"
-                )}
-                draggable={isEditing}
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-              >
-                <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
-                {isEditing && (
-                  <>
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                    <div className="absolute top-3 left-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-[#2C2C2C] shadow-sm backdrop-blur-sm cursor-grab active:cursor-grabbing">
-                      <GripVertical size={16} />
-                    </div>
-                    <button 
-                      onClick={() => handleDeleteImage(idx)}
-                      className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 shadow-sm backdrop-blur-sm transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </>
-                )}
-              </div>
-            ))}
+            <Reorder.Group 
+              axis="x" 
+              values={portfolio} 
+              onReorder={setPortfolio} 
+              className="flex gap-4"
+            >
+              {portfolio.map((img, idx) => (
+                <Reorder.Item 
+                  key={img} 
+                  value={img}
+                  dragListener={isEditing}
+                  className={cn(
+                    "relative flex-shrink-0 w-40 h-56 rounded-[24px] overflow-hidden luxury-shadow group transition-transform",
+                    isEditing && "cursor-grab active:cursor-grabbing"
+                  )}
+                >
+                  <img src={img} className="w-full h-full object-cover pointer-events-none" referrerPolicy="no-referrer" />
+                  {isEditing && (
+                    <>
+                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                      <div className="absolute top-3 left-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-[#2C2C2C] shadow-sm backdrop-blur-sm cursor-grab active:cursor-grabbing">
+                        <GripVertical size={16} />
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteImage(idx)}
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 shadow-sm backdrop-blur-sm transition-colors z-10"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
             {isEditing && (
               <div className="flex-shrink-0 w-40 h-56 rounded-[24px] border-2 border-dashed border-[#D4AF37] flex flex-col items-center justify-center gap-3 text-[#D4AF37] cursor-pointer hover:bg-[#F4E8C8]/20 transition-colors bg-[#F4E8C8]/10 shadow-sm">
                 <div className="w-10 h-10 rounded-full bg-[#D4AF37] text-white flex items-center justify-center shadow-md">
@@ -1915,17 +1919,39 @@ const ArtistProfileScreen = () => {
                       />
                     </div>
                     <div className="flex gap-3">
-                      <input 
-                        type="number" 
-                        value={service.price}
-                        onChange={(e) => {
-                          const newServices = [...services];
-                          newServices[idx].price = Number(e.target.value);
-                          setServices(newServices);
-                        }}
-                        className="font-serif text-[#D4AF37] w-1/3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                        placeholder="Price"
-                      />
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <input 
+                          type="number" 
+                          value={service.price === 0 && priceErrors[service.id] ? '' : service.price}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const numVal = Number(val);
+                            const newServices = [...services];
+                            newServices[idx].price = numVal;
+                            setServices(newServices);
+                            
+                            if (val === '' || numVal <= 0) {
+                              setPriceErrors(prev => ({ ...prev, [service.id]: 'Invalid price' }));
+                            } else {
+                              setPriceErrors(prev => {
+                                const newErrors = { ...prev };
+                                delete newErrors[service.id];
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          className={cn(
+                            "font-serif text-[#D4AF37] w-full bg-gray-50 border rounded-lg px-3 py-2 focus:outline-none transition-all",
+                            priceErrors[service.id] ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-400" : "border-gray-100 focus:border-[#D4AF37]"
+                          )}
+                          placeholder="Price"
+                          min="0"
+                          step="0.01"
+                        />
+                        {priceErrors[service.id] && (
+                          <span className="text-[10px] text-red-500">{priceErrors[service.id]}</span>
+                        )}
+                      </div>
                       <input 
                         type="text" 
                         value={service.duration}
@@ -2011,7 +2037,12 @@ const ArtistProfileScreen = () => {
           
           {isEditing && (
             <button 
-              onClick={() => setServices([...services, { id: `s-${Date.now()}`, name: '', price: 0, duration: '', description: '', materialsUsed: '', stylingNotes: '' }])}
+              onClick={() => {
+                const newId = `s-${Date.now()}`;
+                setServices([...services, { id: newId, name: '', price: 0, duration: '', description: '', materialsUsed: '', stylingNotes: '' }]);
+                setPriceErrors(prev => ({ ...prev, [newId]: 'Invalid price' }));
+                showToast("New service added");
+              }}
               className="w-full mt-4 py-4 border-2 border-dashed border-[#D4AF37] text-[#D4AF37] rounded-[24px] text-sm font-medium flex items-center justify-center gap-2 hover:bg-[#F4E8C8]/20 transition-colors bg-[#F4E8C8]/10 shadow-sm"
             >
               <Plus size={18} /> Add New Service
@@ -2020,7 +2051,7 @@ const ArtistProfileScreen = () => {
         </div>
 
         {/* Settings / Logout */}
-        {!isEditing && (
+        {!isEditing ? (
           <div className="space-y-4 mt-8">
             <button onClick={() => setIsEditing(true)} className="w-full bg-[#2C2C2C] text-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
               <div className="flex items-center gap-4">
@@ -2039,8 +2070,70 @@ const ArtistProfileScreen = () => {
               </div>
             </button>
           </div>
+        ) : (
+          <div className="mt-8">
+            <button 
+              onClick={() => {
+                if (Object.keys(priceErrors).length === 0) {
+                  setIsEditing(false);
+                  showToast("Profile saved successfully");
+                }
+              }}
+              disabled={Object.keys(priceErrors).length > 0}
+              className="w-full bg-[#2C2C2C] text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase shadow-xl active:scale-95 transition-all disabled:opacity-50"
+            >
+              Confirm Changes
+            </button>
+          </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {imageToDelete !== null && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center luxury-shadow"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="font-serif text-2xl text-[#2C2C2C] mb-2">Delete Image?</h3>
+              <p className="text-sm text-[#8E8E8E] mb-6">Are you sure you want to remove this image from your portfolio? This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setImageToDelete(null)}
+                  className="flex-1 py-4 rounded-full font-medium tracking-widest text-xs uppercase border border-gray-200 text-[#2C2C2C]"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmDeleteImage}
+                  className="flex-1 bg-red-500 text-white py-4 rounded-full font-medium tracking-widest text-xs uppercase"
+                >
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#2C2C2C] text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl z-50 whitespace-nowrap"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
