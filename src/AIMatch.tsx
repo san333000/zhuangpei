@@ -77,9 +77,22 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
 
   // State for selections (simplified for UI)
   const [selections, setSelections] = useState<Record<string, string>>({});
+  const [showOtherModal, setShowOtherModal] = useState(false);
+  const [customStyle, setCustomStyle] = useState('');
 
   const handleSelect = (category: string, value: string) => {
-    setSelections(prev => ({ ...prev, [category]: value }));
+    if (category === 'bridalStyle' && value === 'Other') {
+      setShowOtherModal(true);
+    } else {
+      setSelections(prev => ({ ...prev, [category]: value }));
+    }
+  };
+
+  const handleCustomStyleSubmit = () => {
+    if (customStyle.trim()) {
+      setSelections(prev => ({ ...prev, bridalStyle: customStyle.trim() }));
+    }
+    setShowOtherModal(false);
   };
 
   const handleNext = () => {
@@ -121,6 +134,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Thai', label: 'Thai', image: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&q=80' },
       { id: 'Western Classic', label: 'Western Classic', image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400&q=80' },
       { id: 'Modern Glam', label: 'Modern Glam', image: 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=400&q=80' },
+      { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 
     const MAKEUP_FINISHES = [
@@ -144,17 +158,19 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
                   onClick={() => handleSelect('bridalStyle', style.id)}
                   className={cn(
                     "relative rounded-2xl overflow-hidden aspect-square group transition-all",
-                    selections.bridalStyle === style.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                    (selections.bridalStyle === style.id || (style.id === 'Other' && selections.bridalStyle && !BRIDAL_STYLES.some(s => s.id === selections.bridalStyle && s.id !== 'Other'))) ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
                   )}
                 >
                   <img src={style.image} alt={style.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className={cn(
                     "absolute inset-0 flex items-end p-3 transition-colors",
-                    selections.bridalStyle === style.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                    (selections.bridalStyle === style.id || (style.id === 'Other' && selections.bridalStyle && !BRIDAL_STYLES.some(s => s.id === selections.bridalStyle && s.id !== 'Other'))) ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
                   )}>
-                    <span className="text-white font-medium text-sm drop-shadow-md">{style.label}</span>
+                    <span className="text-white font-medium text-sm drop-shadow-md">
+                      {style.id === 'Other' && selections.bridalStyle && !BRIDAL_STYLES.some(s => s.id === selections.bridalStyle && s.id !== 'Other') ? selections.bridalStyle : style.label}
+                    </span>
                   </div>
-                  {selections.bridalStyle === style.id && (
+                  {(selections.bridalStyle === style.id || (style.id === 'Other' && selections.bridalStyle && !BRIDAL_STYLES.some(s => s.id === selections.bridalStyle && s.id !== 'Other'))) && (
                     <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
                       <CheckCircle2 size={14} />
                     </div>
@@ -397,6 +413,48 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
           )}
         </button>
       </div>
+
+      {/* Custom Style Modal */}
+      <AnimatePresence>
+        {showOtherModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-[24px] p-6 w-full max-w-sm luxury-shadow"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Custom Style</h3>
+                <button onClick={() => setShowOtherModal(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C]">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-[#8E8E8E] mb-4">Please describe your preferred bridal style.</p>
+              <input 
+                type="text" 
+                value={customStyle}
+                onChange={(e) => setCustomStyle(e.target.value)}
+                placeholder="e.g., Vintage Hollywood, Bohemian..."
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm focus:border-[#D4AF37] outline-none mb-6"
+                autoFocus
+              />
+              <button 
+                onClick={handleCustomStyleSubmit}
+                disabled={!customStyle.trim()}
+                className="w-full bg-[#D4AF37] text-white py-3 rounded-xl font-medium disabled:opacity-50 transition-opacity"
+              >
+                Save Style
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
