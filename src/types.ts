@@ -8,6 +8,8 @@ export interface Service {
   duration: string;
   materialsUsed?: string;
   stylingNotes?: string;
+  category?: string;
+  videoUrl?: string;
 }
 
 export interface MUA {

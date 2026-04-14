@@ -16,7 +16,7 @@ export const MOCK_MUAS: MUA[] = [
     ],
     bio: '8 years of bespoke bridal beauty experience.',
     services: [
-      { id: 's1', name: 'Full Wedding Day Package', price: 2880, description: 'Includes trial, morning, ceremony, and banquet looks.', duration: '12 hrs' },
+      { id: 's1', name: 'Full Wedding Day Package', price: 2880, description: 'Includes trial, morning, ceremony, and banquet looks.', duration: '12 hrs', category: 'Bridal' },
     ]
   },
   {
@@ -42,7 +42,25 @@ export const MOCK_MUAS: MUA[] = [
         description: 'In-studio consultation and trial.', 
         duration: '2 hrs',
         materialsUsed: 'Charlotte Tilbury, Tom Ford Beauty, Armani Luminous Silk',
-        stylingNotes: 'Focus on skin prep and finding the perfect undertone match. Please arrive with a clean, moisturized face.'
+        stylingNotes: 'Focus on skin prep and finding the perfect undertone match. Please arrive with a clean, moisturized face.',
+        category: 'Bridal'
+      },
+      { 
+        id: 's4', 
+        name: 'Event Glam', 
+        price: 250, 
+        description: 'Perfect for galas, parties, and special events.', 
+        duration: '1.5 hrs',
+        category: 'Event',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+      },
+      { 
+        id: 's5', 
+        name: 'Daily Fresh Look', 
+        price: 150, 
+        description: 'A natural, glowing look for everyday confidence.', 
+        duration: '1 hr',
+        category: 'Daily Makeup'
       },
     ]
   }

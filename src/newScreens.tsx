@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
 import Markdown from 'react-markdown';
@@ -11,6 +11,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
   const navigate = useNavigate();
   const artist = MOCK_MUAS.find(m => m.id === id) || MOCK_MUAS[0];
   const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
@@ -80,8 +81,26 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
         {/* 5. Service packages */}
         <div>
           <h3 className="font-serif text-xl text-[#2C2C2C] mb-4 px-2">Service Packages</h3>
+          
+          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1 px-2">
+            {['All', ...Array.from(new Set(artist.services.map(s => s.category).filter(Boolean)))].map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category as string)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                  selectedCategory === category 
+                    ? "bg-[#D4AF37] text-white shadow-md" 
+                    : "bg-white text-[#8E8E8E] border border-gray-200 hover:border-[#D4AF37]"
+                )}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
           <div className="space-y-4">
-            {artist.services.map((service, idx) => (
+            {(selectedCategory === 'All' ? artist.services : artist.services.filter(s => s.category === selectedCategory)).map((service, idx) => (
               <div key={idx} className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50 relative group">
                 <div className="flex justify-between items-start mb-3">
                   <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
@@ -91,9 +110,26 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                   <Markdown>{service.description}</Markdown>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
-                    <Clock size={12} />
-                    <span>{service.duration}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
+                      <Clock size={12} />
+                      <span>{service.duration}</span>
+                    </div>
+                    {service.category && (
+                      <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
+                        {service.category}
+                      </div>
+                    )}
+                    {service.videoUrl && (
+                      <a 
+                        href={service.videoUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md"
+                      >
+                        <PlayCircle size={12} /> Watch Video
+                      </a>
+                    )}
                   </div>
                   <button onClick={() => navigate(`/book/${artist.id}`)} className="px-4 py-2 bg-[#F4E8C8]/30 text-[#D4AF37] rounded-full text-xs font-medium tracking-widest uppercase">
                     Select

@@ -6,7 +6,7 @@ import {
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
   Plus, ChevronDown, ChevronUp, Search, Settings, Heart, LogOut, Phone,
-  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload
+  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload, PlayCircle, Video
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
@@ -22,7 +22,7 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   const location = useLocation();
   
   const mainTabs = [
-    '/home', '/checklist', '/ai-match', '/bookings', '/profile',
+    '/home', '/checklist', '/ai-match', '/ai-match/results', '/bookings', '/profile',
     '/crm', '/crm/clients', '/crm/profile'
   ];
   
@@ -1744,6 +1744,7 @@ const ArtistProfileScreen = () => {
   const [imageToDelete, setImageToDelete] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -1897,8 +1898,33 @@ const ArtistProfileScreen = () => {
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-serif text-lg text-[#2C2C2C]">My Services</h3>
           </div>
-          <Reorder.Group axis="y" values={services} onReorder={setServices} className="space-y-4">
-            {services.map((service, idx) => (
+          
+          {!isEditing && (
+            <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1">
+              {['All', ...Array.from(new Set(services.map(s => s.category).filter(Boolean)))].map(category => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category as string)}
+                  className={cn(
+                    "px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
+                    selectedCategory === category 
+                      ? "bg-[#D4AF37] text-white shadow-md" 
+                      : "bg-white text-[#8E8E8E] border border-gray-200 hover:border-[#D4AF37]"
+                  )}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <Reorder.Group 
+            axis="y" 
+            values={isEditing ? services : (selectedCategory === 'All' ? services : services.filter(s => s.category === selectedCategory))} 
+            onReorder={isEditing ? setServices : () => {}} 
+            className="space-y-4"
+          >
+            {(isEditing ? services : (selectedCategory === 'All' ? services : services.filter(s => s.category === selectedCategory))).map((service, idx) => (
               <Reorder.Item 
                 key={service.id} 
                 value={service} 
@@ -1936,6 +1962,24 @@ const ArtistProfileScreen = () => {
                       />
                     </div>
                     <div className="flex gap-3">
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <select
+                          value={service.category || ''}
+                          onChange={(e) => {
+                            const newServices = [...services];
+                            newServices[idx].category = e.target.value;
+                            setServices(newServices);
+                          }}
+                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        >
+                          <option value="">Category...</option>
+                          <option value="Bridal">Bridal</option>
+                          <option value="Event">Event</option>
+                          <option value="Daily Makeup">Daily Makeup</option>
+                          <option value="Photoshoot">Photoshoot</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
                       <div className="w-1/3 flex flex-col gap-1">
                         <input 
                           type="number" 
@@ -1981,55 +2025,60 @@ const ArtistProfileScreen = () => {
                         placeholder="Duration (e.g., 2 hrs)"
                       />
                     </div>
-                    <div data-color-mode="light">
-                      <MDEditor
+                    <div>
+                      <textarea
                         value={service.description}
-                        onChange={(val) => {
+                        onChange={(e) => {
                           const newServices = [...services];
-                          newServices[idx].description = val || '';
+                          newServices[idx].description = e.target.value;
                           setServices(newServices);
                         }}
-                        preview="edit"
-                        height={120}
-                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
-                        textareaProps={{
-                          placeholder: "Service Description"
-                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[80px] resize-y"
+                        placeholder="Service Description"
                       />
                     </div>
-                    <div className="space-y-1" data-color-mode="light">
+                    <div className="space-y-1">
                       <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Materials Used (Optional)</label>
-                      <MDEditor
+                      <textarea
                         value={service.materialsUsed || ''}
-                        onChange={(val) => {
+                        onChange={(e) => {
                           const newServices = [...services];
-                          newServices[idx].materialsUsed = val || '';
+                          newServices[idx].materialsUsed = e.target.value;
                           setServices(newServices);
                         }}
-                        preview="edit"
-                        height={100}
-                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
-                        textareaProps={{
-                          placeholder: "e.g., MAC, Charlotte Tilbury..."
-                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[60px] resize-y"
+                        placeholder="e.g., MAC, Charlotte Tilbury..."
                       />
                     </div>
-                    <div className="space-y-1" data-color-mode="light">
+                    <div className="space-y-1">
                       <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Styling Notes (Optional)</label>
-                      <MDEditor
+                      <textarea
                         value={service.stylingNotes || ''}
-                        onChange={(val) => {
+                        onChange={(e) => {
                           const newServices = [...services];
-                          newServices[idx].stylingNotes = val || '';
+                          newServices[idx].stylingNotes = e.target.value;
                           setServices(newServices);
                         }}
-                        preview="edit"
-                        height={100}
-                        className="w-full text-xs text-[#2C2C2C] border border-gray-100 rounded-lg focus-within:border-[#D4AF37] overflow-hidden"
-                        textareaProps={{
-                          placeholder: "e.g., Suitable for outdoor weddings..."
-                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[60px] resize-y"
+                        placeholder="e.g., Suitable for outdoor weddings..."
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Video Link (Optional)</label>
+                      <div className="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus-within:border-[#D4AF37]">
+                        <Video size={14} className="text-[#8E8E8E]" />
+                        <input 
+                          type="url" 
+                          value={service.videoUrl || ''}
+                          onChange={(e) => {
+                            const newServices = [...services];
+                            newServices[idx].videoUrl = e.target.value;
+                            setServices(newServices);
+                          }}
+                          className="text-xs text-[#2C2C2C] w-full bg-transparent focus:outline-none"
+                          placeholder="https://..."
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -2063,8 +2112,25 @@ const ArtistProfileScreen = () => {
                       </div>
                     )}
                     
-                    <div className="inline-flex items-center gap-1 text-[10px] text-[#8E8E8E] uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md">
-                      <Clock size={10} /> {service.duration}
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center gap-1 text-[10px] text-[#8E8E8E] uppercase tracking-widest bg-gray-50 px-2 py-1 rounded-md">
+                        <Clock size={10} /> {service.duration}
+                      </div>
+                      {service.category && (
+                        <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
+                          {service.category}
+                        </div>
+                      )}
+                      {service.videoUrl && (
+                        <a 
+                          href={service.videoUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md ml-auto"
+                        >
+                          <PlayCircle size={12} /> Watch Video
+                        </a>
+                      )}
                     </div>
                   </>
                 )}
