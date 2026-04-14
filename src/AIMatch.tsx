@@ -79,9 +79,11 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [showOtherModal, setShowOtherModal] = useState(false);
   const [customStyle, setCustomStyle] = useState('');
+  const [currentCategory, setCurrentCategory] = useState('');
 
   const handleSelect = (category: string, value: string) => {
-    if (category === 'bridalStyle' && value === 'Other') {
+    if (value === 'Other') {
+      setCurrentCategory(category);
       setShowOtherModal(true);
     } else {
       setSelections(prev => ({ ...prev, [category]: value }));
@@ -89,10 +91,12 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
   };
 
   const handleCustomStyleSubmit = () => {
-    if (customStyle.trim()) {
-      setSelections(prev => ({ ...prev, bridalStyle: customStyle.trim() }));
+    if (customStyle.trim() && currentCategory) {
+      setSelections(prev => ({ ...prev, [currentCategory]: customStyle.trim() }));
     }
     setShowOtherModal(false);
+    setCustomStyle('');
+    setCurrentCategory('');
   };
 
   const handleNext = () => {
@@ -143,6 +147,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Pearlescent', label: 'Pearlescent', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&q=80' },
       { id: 'Dewy', label: 'Dewy', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80' },
       { id: 'Soft Glam', label: 'Soft Glam', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80' },
+      { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 
     return (
@@ -188,17 +193,19 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
                   onClick={() => handleSelect('makeupFinish', finish.id)}
                   className={cn(
                     "relative rounded-2xl overflow-hidden aspect-square group transition-all",
-                    selections.makeupFinish === finish.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                    (selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !MAKEUP_FINISHES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
                   )}
                 >
                   <img src={finish.image} alt={finish.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className={cn(
                     "absolute inset-0 flex items-end p-3 transition-colors",
-                    selections.makeupFinish === finish.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                    (selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !MAKEUP_FINISHES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
                   )}>
-                    <span className="text-white font-medium text-sm drop-shadow-md">{finish.label}</span>
+                    <span className="text-white font-medium text-sm drop-shadow-md">
+                      {finish.id === 'Other' && selections.makeupFinish && !MAKEUP_FINISHES.some(s => s.id === selections.makeupFinish && s.id !== 'Other') ? selections.makeupFinish : finish.label}
+                    </span>
                   </div>
-                  {selections.makeupFinish === finish.id && (
+                  {(selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !MAKEUP_FINISHES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) && (
                     <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
                       <CheckCircle2 size={14} />
                     </div>
@@ -272,6 +279,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Thai', label: 'Thai', image: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&q=80' },
       { id: 'Soft Glam', label: 'Soft Glam', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80' },
       { id: 'Creative', label: 'Creative', image: 'https://images.unsplash.com/photo-1512496015851-a1c825b2725b?w=400&q=80' },
+      { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 
     const FINISH_PREFERENCES = [
@@ -279,6 +287,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Dewy', label: 'Dewy', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80' },
       { id: 'Satin', label: 'Satin', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&q=80' },
       { id: 'Glowy', label: 'Glowy', image: 'https://images.unsplash.com/photo-1554050857-c84a8abdb5e5?w=400&q=80' },
+      { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 
     return (
@@ -294,17 +303,19 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
                   onClick={() => handleSelect('makeupStyle', style.id)}
                   className={cn(
                     "relative rounded-2xl overflow-hidden aspect-square group transition-all",
-                    selections.makeupStyle === style.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                    (selections.makeupStyle === style.id || (style.id === 'Other' && selections.makeupStyle && !MAKEUP_STYLES.some(s => s.id === selections.makeupStyle && s.id !== 'Other'))) ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
                   )}
                 >
                   <img src={style.image} alt={style.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className={cn(
                     "absolute inset-0 flex items-end p-3 transition-colors",
-                    selections.makeupStyle === style.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                    (selections.makeupStyle === style.id || (style.id === 'Other' && selections.makeupStyle && !MAKEUP_STYLES.some(s => s.id === selections.makeupStyle && s.id !== 'Other'))) ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
                   )}>
-                    <span className="text-white font-medium text-sm drop-shadow-md">{style.label}</span>
+                    <span className="text-white font-medium text-sm drop-shadow-md">
+                      {style.id === 'Other' && selections.makeupStyle && !MAKEUP_STYLES.some(s => s.id === selections.makeupStyle && s.id !== 'Other') ? selections.makeupStyle : style.label}
+                    </span>
                   </div>
-                  {selections.makeupStyle === style.id && (
+                  {(selections.makeupStyle === style.id || (style.id === 'Other' && selections.makeupStyle && !MAKEUP_STYLES.some(s => s.id === selections.makeupStyle && s.id !== 'Other'))) && (
                     <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
                       <CheckCircle2 size={14} />
                     </div>
@@ -322,17 +333,19 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
                   onClick={() => handleSelect('makeupFinish', finish.id)}
                   className={cn(
                     "relative rounded-2xl overflow-hidden aspect-square group transition-all",
-                    selections.makeupFinish === finish.id ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
+                    (selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !FINISH_PREFERENCES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) ? "ring-2 ring-[#D4AF37] ring-offset-2" : "ring-1 ring-gray-200"
                   )}
                 >
                   <img src={finish.image} alt={finish.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className={cn(
                     "absolute inset-0 flex items-end p-3 transition-colors",
-                    selections.makeupFinish === finish.id ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
+                    (selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !FINISH_PREFERENCES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) ? "bg-gradient-to-t from-[#D4AF37]/80 to-transparent" : "bg-gradient-to-t from-black/60 to-transparent group-hover:from-black/80"
                   )}>
-                    <span className="text-white font-medium text-sm drop-shadow-md">{finish.label}</span>
+                    <span className="text-white font-medium text-sm drop-shadow-md">
+                      {finish.id === 'Other' && selections.makeupFinish && !FINISH_PREFERENCES.some(s => s.id === selections.makeupFinish && s.id !== 'Other') ? selections.makeupFinish : finish.label}
+                    </span>
                   </div>
-                  {selections.makeupFinish === finish.id && (
+                  {(selections.makeupFinish === finish.id || (finish.id === 'Other' && selections.makeupFinish && !FINISH_PREFERENCES.some(s => s.id === selections.makeupFinish && s.id !== 'Other'))) && (
                     <div className="absolute top-2 right-2 w-6 h-6 bg-[#D4AF37] rounded-full flex items-center justify-center text-white shadow-md">
                       <CheckCircle2 size={14} />
                     </div>
@@ -430,12 +443,12 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
               className="bg-white rounded-[24px] p-6 w-full max-w-sm luxury-shadow"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-serif text-xl text-[#2C2C2C]">Custom Style</h3>
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Custom Option</h3>
                 <button onClick={() => setShowOtherModal(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C]">
                   <X size={20} />
                 </button>
               </div>
-              <p className="text-sm text-[#8E8E8E] mb-4">Please describe your preferred bridal style.</p>
+              <p className="text-sm text-[#8E8E8E] mb-4">Please describe your preference.</p>
               <input 
                 type="text" 
                 value={customStyle}
@@ -449,7 +462,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
                 disabled={!customStyle.trim()}
                 className="w-full bg-[#D4AF37] text-white py-3 rounded-xl font-medium disabled:opacity-50 transition-opacity"
               >
-                Save Style
+                Save Option
               </button>
             </motion.div>
           </motion.div>
