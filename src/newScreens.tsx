@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
 import Markdown from 'react-markdown';
@@ -697,6 +697,35 @@ export const CRMAppointmentDetailScreen = ({ Header }: any) => {
   const [notes, setNotes] = useState("Client prefers a natural look. Allergic to lavender. Requested extra focus on skin prep.");
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
+  const [history, setHistory] = useState<string[]>(["Client prefers a natural look. Allergic to lavender. Requested extra focus on skin prep."]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newNotes = e.target.value;
+    setNotes(newNotes);
+    
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newNotes);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setNotes(history[newIndex]);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setNotes(history[newIndex]);
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header title="Appointment Details" showBack />
@@ -733,17 +762,37 @@ export const CRMAppointmentDetailScreen = ({ Header }: any) => {
         <div className="bg-white p-6 rounded-[24px] luxury-shadow">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-serif text-lg text-[#2C2C2C]">Client Notes</h3>
-            <button 
-              onClick={() => setIsEditingNotes(!isEditingNotes)}
-              className="text-[#D4AF37] text-xs font-medium uppercase tracking-widest"
-            >
-              {isEditingNotes ? 'Save' : 'Edit'}
-            </button>
+            <div className="flex items-center gap-3">
+              {isEditingNotes && (
+                <>
+                  <button 
+                    onClick={handleUndo}
+                    disabled={historyIndex === 0}
+                    className="text-[#8E8E8E] disabled:opacity-30 hover:text-[#2C2C2C] transition-colors"
+                  >
+                    <Undo2 size={16} />
+                  </button>
+                  <button 
+                    onClick={handleRedo}
+                    disabled={historyIndex === history.length - 1}
+                    className="text-[#8E8E8E] disabled:opacity-30 hover:text-[#2C2C2C] transition-colors"
+                  >
+                    <Redo2 size={16} />
+                  </button>
+                </>
+              )}
+              <button 
+                onClick={() => setIsEditingNotes(!isEditingNotes)}
+                className="text-[#D4AF37] text-xs font-medium uppercase tracking-widest"
+              >
+                {isEditingNotes ? 'Save' : 'Edit'}
+              </button>
+            </div>
           </div>
           {isEditingNotes ? (
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={handleNotesChange}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] resize-none h-32"
               placeholder="Add notes here..."
             />
