@@ -150,7 +150,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                       )}
                       {service.stylingNotes && (
                         <div>
-                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Notes:</span>
+                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Styling & Suitability:</span>
                           <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
                             <Markdown>{service.stylingNotes}</Markdown>
                           </div>

@@ -6,7 +6,7 @@ import {
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
   Plus, ChevronDown, ChevronUp, Search, Settings, Heart, LogOut, Phone,
-  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload, PlayCircle, Video
+  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload, PlayCircle, Video, Edit2
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
@@ -1272,9 +1272,12 @@ const ClientArchiveScreen = () => {
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
-  const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [newNoteTags, setNewNoteTags] = useState('');
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
 
   const handleGenerateRecommendation = async () => {
     setIsGenerating(true);
@@ -1283,26 +1286,67 @@ const ClientArchiveScreen = () => {
     setIsGenerating(false);
   };
 
+  const openAddNoteModal = () => {
+    setEditingNoteId(null);
+    setNewNoteContent('');
+    setNewNoteTags('');
+    setIsNoteModalOpen(true);
+  };
+
+  const openEditNoteModal = (note: any) => {
+    setEditingNoteId(note.id);
+    setNewNoteContent(note.content);
+    setNewNoteTags(note.tags.join(', '));
+    setIsNoteModalOpen(true);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    if (client.richNotes) {
+      client.richNotes = client.richNotes.filter(n => n.id !== noteId);
+      setNoteToDelete(null);
+      // Force re-render
+      setSelectedTagFilter(prev => prev);
+    }
+  };
+
   const handleSaveNote = () => {
     if (!newNoteContent.trim()) return;
     
     const tags = newNoteTags.split(',').map(t => t.trim()).filter(t => t);
-    const newNote = {
-      id: `note-${Date.now()}`,
-      content: newNoteContent,
-      tags,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    };
     
     if (!client.richNotes) {
       client.richNotes = [];
     }
-    client.richNotes.unshift(newNote);
+
+    if (editingNoteId) {
+      const noteIndex = client.richNotes.findIndex(n => n.id === editingNoteId);
+      if (noteIndex !== -1) {
+        client.richNotes[noteIndex] = {
+          ...client.richNotes[noteIndex],
+          content: newNoteContent,
+          tags
+        };
+      }
+    } else {
+      const newNote = {
+        id: `note-${Date.now()}`,
+        content: newNoteContent,
+        tags,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      };
+      client.richNotes.unshift(newNote);
+    }
     
-    setIsAddNoteModalOpen(false);
+    setIsNoteModalOpen(false);
     setNewNoteContent('');
     setNewNoteTags('');
+    setEditingNoteId(null);
   };
+
+  const allTags = Array.from(new Set(client.richNotes?.flatMap(note => note.tags) || []));
+  const filteredNotes = selectedTagFilter 
+    ? client.richNotes?.filter(note => note.tags.includes(selectedTagFilter))
+    : client.richNotes;
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
@@ -1373,19 +1417,54 @@ const ClientArchiveScreen = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-serif text-xl text-[#2C2C2C]">Formula & Notes</h3>
           <button 
-            onClick={() => setIsAddNoteModalOpen(true)}
+            onClick={openAddNoteModal}
             className="text-[#D4AF37] text-xs font-medium uppercase tracking-widest flex items-center gap-1 bg-[#F4E8C8]/30 px-3 py-1.5 rounded-full"
           >
             <Plus size={14} /> Add Note
           </button>
         </div>
         
+        {allTags.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
+            <button
+              onClick={() => setSelectedTagFilter(null)}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-medium whitespace-nowrap transition-colors",
+                selectedTagFilter === null ? "bg-[#2C2C2C] text-white" : "bg-gray-100 text-[#8E8E8E]"
+              )}
+            >
+              All Notes
+            </button>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTagFilter(tag)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-[10px] uppercase tracking-widest font-medium whitespace-nowrap transition-colors",
+                  selectedTagFilter === tag ? "bg-[#D4AF37] text-white" : "bg-[#F4E8C8]/30 text-[#D4AF37]"
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <div className="space-y-4">
-          {client.richNotes && client.richNotes.length > 0 ? (
-            client.richNotes.map(note => (
+          {filteredNotes && filteredNotes.length > 0 ? (
+            filteredNotes.map(note => (
               <div key={note.id} className="bg-[#FFFDF9] border border-[#D4AF37]/20 rounded-[24px] p-6 luxury-shadow">
                 <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] text-[#8E8E8E] uppercase tracking-widest">{note.date}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-[#8E8E8E] uppercase tracking-widest">{note.date}</span>
+                    <button onClick={() => openEditNoteModal(note)} className="text-[#D4AF37] hover:text-[#2C2C2C] transition-colors"><Edit2 size={12} /></button>
+                    <button 
+                      onClick={() => setNoteToDelete(note.id)} 
+                      className="text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                   <div className="flex gap-1 flex-wrap justify-end">
                     {note.tags.map(tag => (
                       <span key={tag} className="px-2 py-0.5 bg-[#F4E8C8]/50 text-[#D4AF37] text-[9px] uppercase tracking-widest rounded-full font-medium">
@@ -1402,7 +1481,7 @@ const ClientArchiveScreen = () => {
           ) : (
             <div className="bg-[#FFFDF9] border border-[#D4AF37]/20 rounded-[24px] p-6 luxury-shadow">
               <p className="text-sm text-[#2C2C2C]/80 leading-relaxed font-serif italic">
-                "{client.notes}"
+                {selectedTagFilter ? `No notes found with tag "${selectedTagFilter}"` : `"${client.notes}"`}
               </p>
             </div>
           )}
@@ -1479,16 +1558,16 @@ const ClientArchiveScreen = () => {
         <button className="flex-1 bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl">Book New</button>
       </div>
 
-      {/* Add Note Modal */}
+      {/* Add/Edit Note Modal */}
       <AnimatePresence>
-        {isAddNoteModalOpen && (
+        {isNoteModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsAddNoteModalOpen(false)}
+              onClick={() => setIsNoteModalOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1497,8 +1576,8 @@ const ClientArchiveScreen = () => {
               className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-serif text-xl text-[#2C2C2C]">Add Note</h3>
-                <button onClick={() => setIsAddNoteModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">{editingNoteId ? 'Edit Note' : 'Add Note'}</h3>
+                <button onClick={() => setIsNoteModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
                   <X size={20} />
                 </button>
               </div>
@@ -1535,6 +1614,44 @@ const ClientArchiveScreen = () => {
               >
                 Save Note
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {noteToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setNoteToDelete(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow text-center"
+            >
+              <h3 className="font-serif text-xl text-[#2C2C2C] mb-2">Delete Note</h3>
+              <p className="text-sm text-[#8E8E8E] mb-8">Are you sure you want to delete this note? This action cannot be undone.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setNoteToDelete(null)}
+                  className="flex-1 border border-gray-200 text-[#2C2C2C] py-3 rounded-full text-xs font-medium tracking-widest uppercase transition-colors hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteNote(noteToDelete)}
+                  className="flex-1 bg-red-500 text-white py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg shadow-red-500/20 active:scale-95 transition-transform"
+                >
+                  Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
@@ -1738,6 +1855,10 @@ const ArtistProfileScreen = () => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const artist = MOCK_MUAS[1]; // Elena Rostova
+  const [name, setName] = useState(artist.name);
+  const [title, setTitle] = useState(artist.title);
+  const [city, setCity] = useState(artist.city);
+  const [bio, setBio] = useState(artist.bio);
   const [portfolio, setPortfolio] = useState(artist.portfolio);
   const [services, setServices] = useState(artist.services);
   const [priceErrors, setPriceErrors] = useState<Record<string, string>>({});
@@ -1762,6 +1883,19 @@ const ArtistProfileScreen = () => {
     }
   };
 
+  const handleSave = () => {
+    if (Object.keys(priceErrors).length === 0) {
+      artist.name = name;
+      artist.title = title;
+      artist.city = city;
+      artist.bio = bio;
+      artist.portfolio = portfolio;
+      artist.services = services;
+      setIsEditing(false);
+      showToast('Profile saved successfully');
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header 
@@ -1769,11 +1903,7 @@ const ArtistProfileScreen = () => {
         rightElement={
           isEditing ? (
             <button 
-              onClick={() => {
-                if (Object.keys(priceErrors).length === 0) {
-                  setIsEditing(false);
-                }
-              }} 
+              onClick={handleSave} 
               disabled={Object.keys(priceErrors).length > 0}
               className="text-[#D4AF37] text-sm font-medium tracking-widest uppercase disabled:opacity-50 transition-opacity"
             >
@@ -1796,31 +1926,34 @@ const ArtistProfileScreen = () => {
         {isEditing ? (
           <input 
             type="text" 
-            defaultValue={artist.name} 
+            value={name} 
+            onChange={(e) => setName(e.target.value)}
             className="font-serif text-2xl text-[#2C2C2C] mb-2 text-center bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors" 
           />
         ) : (
-          <h2 className="font-serif text-2xl text-[#2C2C2C] mb-1">{artist.name}</h2>
+          <h2 className="font-serif text-2xl text-[#2C2C2C] mb-1">{name}</h2>
         )}
         
         {isEditing ? (
           <div className="flex items-center justify-center gap-2 mt-1">
             <input 
               type="text" 
-              defaultValue={artist.title} 
+              value={title} 
+              onChange={(e) => setTitle(e.target.value)}
               className="text-sm text-[#8E8E8E] text-right bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-32" 
               placeholder="Title"
             />
             <span className="text-sm text-[#8E8E8E]">·</span>
             <input 
               type="text" 
-              defaultValue={artist.city} 
+              value={city} 
+              onChange={(e) => setCity(e.target.value)}
               className="text-sm text-[#8E8E8E] text-left bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-24" 
               placeholder="City"
             />
           </div>
         ) : (
-          <p className="text-sm text-[#8E8E8E]">{artist.title} · {artist.city}</p>
+          <p className="text-sm text-[#8E8E8E]">{title} · {city}</p>
         )}
       </div>
 
@@ -1830,11 +1963,12 @@ const ArtistProfileScreen = () => {
           <h3 className="font-serif text-lg text-[#2C2C2C] mb-3">About Me</h3>
           {isEditing ? (
             <textarea 
-              defaultValue={artist.bio} 
+              value={bio} 
+              onChange={(e) => setBio(e.target.value)}
               className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-sm text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] min-h-[100px] luxury-shadow transition-all" 
             />
           ) : (
-            <p className="text-sm text-[#8E8E8E] leading-relaxed bg-white p-5 rounded-[24px] luxury-shadow border border-gray-50">{artist.bio}</p>
+            <p className="text-sm text-[#8E8E8E] leading-relaxed bg-white p-5 rounded-[24px] luxury-shadow border border-gray-50">{bio}</p>
           )}
         </div>
 
@@ -2013,17 +2147,28 @@ const ArtistProfileScreen = () => {
                           <span className="text-[10px] text-red-500">{priceErrors[service.id]}</span>
                         )}
                       </div>
-                      <input 
-                        type="text" 
-                        value={service.duration}
-                        onChange={(e) => {
-                          const newServices = [...services];
-                          newServices[idx].duration = e.target.value;
-                          setServices(newServices);
-                        }}
-                        className="text-xs text-[#8E8E8E] flex-1 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                        placeholder="Duration (e.g., 2 hrs)"
-                      />
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <select
+                          value={service.duration || ''}
+                          onChange={(e) => {
+                            const newServices = [...services];
+                            newServices[idx].duration = e.target.value;
+                            setServices(newServices);
+                          }}
+                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        >
+                          <option value="">Duration...</option>
+                          <option value="30 mins">30 mins</option>
+                          <option value="45 mins">45 mins</option>
+                          <option value="1 hour">1 hour</option>
+                          <option value="1.5 hours">1.5 hours</option>
+                          <option value="2 hours">2 hours</option>
+                          <option value="2.5 hours">2.5 hours</option>
+                          <option value="3 hours">3 hours</option>
+                          <option value="4 hours">4 hours</option>
+                          <option value="5+ hours">5+ hours</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
                       <textarea
@@ -2051,7 +2196,10 @@ const ArtistProfileScreen = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E] ml-1">Styling Notes (Optional)</label>
+                      <div className="flex justify-between items-baseline px-1">
+                        <label className="text-[10px] font-medium uppercase tracking-widest text-[#8E8E8E]">Styling Notes (Optional)</label>
+                        <span className="text-[9px] text-[#8E8E8E] lowercase normal-case">Tips or suitability info</span>
+                      </div>
                       <textarea
                         value={service.stylingNotes || ''}
                         onChange={(e) => {
@@ -2060,7 +2208,7 @@ const ArtistProfileScreen = () => {
                           setServices(newServices);
                         }}
                         className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[60px] resize-y"
-                        placeholder="e.g., Suitable for outdoor weddings..."
+                        placeholder="e.g., Ideal for outdoor summer weddings, includes heavy setting spray..."
                       />
                     </div>
                     <div className="space-y-1">
@@ -2103,7 +2251,7 @@ const ArtistProfileScreen = () => {
                         )}
                         {service.stylingNotes && (
                           <div>
-                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C] block mb-1 mt-2">Notes:</span>
+                            <span className="text-[10px] font-medium uppercase tracking-widest text-[#2C2C2C] block mb-1 mt-2">Styling & Suitability:</span>
                             <div className="text-xs text-[#8E8E8E] prose prose-sm max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
                               <Markdown>{service.stylingNotes}</Markdown>
                             </div>
