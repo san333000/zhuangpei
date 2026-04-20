@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/role-select/index",
+    "pages/home/index",
+    "pages/checklist/index",
+    "pages/ai-match-entry/index",
+    "pages/ai-match-flow/index",
+    "pages/ai-match-loading/index",
+    "pages/ai-match-result/index",
+    "pages/bookings/index",
+    "pages/profile/index",
+    "pages/artist-detail/index",
+    "pages/booking-form/index",
+    "pages/chat/index",
+    "pages/order-detail/index",
+    "pages/saved-artists/index",
+    "pages/settings/index",
+    "pages/privacy-policy/index",
+    "pages/crm/index",
+    "pages/schedule/index",
+    "pages/crm-clients/index",
+    "pages/crm-client-detail/index",
+    "pages/crm-profile/index",
+    "pages/crm-appointment-detail/index"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundTextStyle": "light",
+    "backgroundColor": "#FAF9F6",
+    "backgroundColorTop": "#FAF9F6",
+    "backgroundColorBottom": "#FAF9F6"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}
