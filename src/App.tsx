@@ -2220,9 +2220,9 @@ const GalleryScreen = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 bg-[#FAF9F6] flex flex-col"
+            className="fixed inset-y-0 left-0 right-0 z-[60] flex justify-center pointer-events-none"
           >
-            <div className="w-full max-w-md mx-auto flex flex-col h-full bg-[#FAF9F6] relative">
+            <div className="w-full max-w-md flex flex-col h-full bg-[#FAF9F6] relative pointer-events-auto shadow-2xl">
               <header className="px-6 py-5 flex items-center bg-[#FAF9F6] z-10">
                 <button onClick={() => setIsNewPortfolioOpen(false)} className="p-1 -ml-2 text-[#2C2C2C] hover:text-[#D4AF37] transition-colors absolute left-6">
                   <ChevronLeft size={24} strokeWidth={1.5} />
@@ -2292,7 +2292,7 @@ const GalleryScreen = () => {
               </div>
 
               {/* Bottom Fixed Area */}
-              <div className="p-6 bg-white border-t border-gray-100">
+              <div className="p-6 pb-12 bg-white border-t border-gray-100">
                 <button
                   onClick={handleCreatePortfolio}
                   className="w-full bg-[#D4AF37] text-white py-4 rounded-full text-[13px] font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
