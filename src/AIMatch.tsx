@@ -278,7 +278,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Korean', label: 'Korean', image: 'https://images.unsplash.com/photo-1541216970279-affbfdd55aa8?w=400&q=80' },
       { id: 'Thai', label: 'Thai', image: 'https://images.unsplash.com/photo-1585421514738-01798e348b17?w=400&q=80' },
       { id: 'Soft Glam', label: 'Soft Glam', image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80' },
-      { id: 'Creative', label: 'Creative', image: 'https://images.unsplash.com/photo-1512496015851-a1c825b2725b?w=400&q=80' },
+      { id: 'Chinese', label: 'Chinese', image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&q=80' },
       { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 
@@ -287,6 +287,7 @@ export const AIMatchFlowScreen = ({ type }: { type: 'wedding' | 'daily' }) => {
       { id: 'Dewy', label: 'Dewy', image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&q=80' },
       { id: 'Satin', label: 'Satin', image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&q=80' },
       { id: 'Glowy', label: 'Glowy', image: 'https://images.unsplash.com/photo-1554050857-c84a8abdb5e5?w=400&q=80' },
+      { id: 'Shimmer', label: 'Shimmer', image: 'https://images.unsplash.com/photo-1512496015851-a1c825b2725b?w=400&q=80' },
       { id: 'Other', label: 'Other', image: 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=400&q=80' },
     ];
 

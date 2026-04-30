@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import Markdown from 'react-markdown';
 import { 
@@ -22,8 +22,8 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   const location = useLocation();
   
   const mainTabs = [
-    '/home', '/checklist', '/ai-match', '/ai-match/results', '/bookings', '/profile',
-    '/crm', '/crm/clients', '/crm/profile'
+    '/', '/home', '/checklist', '/ai-match', '/ai-match/results', '/bookings', '/profile',
+    '/crm', '/crm/clients', '/crm/profile', '/settings'
   ];
   
   if (!mainTabs.includes(location.pathname)) return null;
@@ -35,27 +35,31 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
     { path: '/bookings', icon: Calendar, label: 'My Orders' },
     { path: '/profile', icon: User, label: 'My Profile' },
   ] : [
-    { path: '/crm', icon: Calendar, label: 'Schedule' },
+    { path: '/', icon: Home, label: 'Workspace' },
     { path: '/crm/clients', icon: Users, label: 'Clients' },
-    { path: '/crm/profile', icon: User, label: 'Profile' },
+    { path: '/crm/profile', icon: ImageIcon, label: 'Gallery' },
+    { path: '/settings', icon: User, label: 'Center' },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 px-6 py-4 flex justify-around items-center z-50 max-w-md mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 px-4 py-4 flex justify-between items-center z-50 max-w-md mx-auto">
       {navItems.map((item) => {
-        const isActive = location.pathname.startsWith(item.path);
+        const isActive = (item.path === '/' || item.path === '/home' || item.path === '/crm') 
+          ? (location.pathname === item.path || (item.path === '/' && location.pathname === '/crm')) 
+          : location.pathname.startsWith(item.path);
         return (
-          <Link 
-            key={item.path} 
-            to={item.path}
-            className={cn(
-              "flex flex-col items-center gap-1.5 transition-colors duration-300",
-              isActive ? "text-[#D4AF37]" : "text-[#8E8E8E] hover:text-[#2C2C2C]"
-            )}
-          >
-            <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
-            <span className="text-[9px] font-medium tracking-widest uppercase">{item.label}</span>
-          </Link>
+          <div key={item.path} className="flex-1 flex justify-center">
+            <Link 
+              to={item.path}
+              className={cn(
+                "flex flex-col items-center gap-1.5 transition-colors duration-300",
+                isActive ? "text-[#D4AF37]" : "text-[#8E8E8E] hover:text-[#2C2C2C]"
+              )}
+            >
+              <item.icon size={22} strokeWidth={isActive ? 2.5 : 1.5} />
+              <span className="text-[9px] font-medium tracking-widest uppercase">{item.label}</span>
+            </Link>
+          </div>
         );
       })}
     </nav>
@@ -765,11 +769,21 @@ const CRMScreen = () => {
   const [blockError, setBlockError] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
 
-  // Add Client State
-  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
-  const [newClientName, setNewClientName] = useState('');
-  const [newClientPhone, setNewClientPhone] = useState('');
-  const [newClientNotes, setNewClientNotes] = useState('');
+  // AI Inquiry Workflow State
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [aiInputText, setAiInputText] = useState('');
+  const [aiUploadedImages, setAiUploadedImages] = useState<string[]>([]);
+  const [isAIReviewOpen, setIsAIReviewOpen] = useState(false);
+  
+  // AI Identification Review State
+  const [parsedData, setParsedData] = useState({
+    clientName: '',
+    phone: '',
+    date: '',
+    location: '',
+    inquiryType: '',
+    requirements: ''
+  });
 
   const filteredAppointments = appointments.filter(apt => {
     if (apt.date !== selectedDate) return false;
@@ -814,16 +828,31 @@ const CRMScreen = () => {
     setIsFabOpen(false);
   };
 
-  const handleSaveClient = () => {
-    if (!newClientName) return;
+  const handleAIPromptConfirm = () => {
+    // Mock AI processing simulating structured data extraction
+    setParsedData({
+      clientName: 'Sarah Jenkins',
+      phone: '(555) 123-4567',
+      date: '2026-10-24',
+      location: 'Ritz-Carlton',
+      inquiryType: 'Bridal Makeup Trial',
+      requirements: aiInputText || 'Wants a soft-glam look for the trial. Mentioned sensitive skin.'
+    });
+    setIsAIModalOpen(false);
+    setIsAIReviewOpen(true);
+  };
+
+  const handleFinalSubmit = () => {
+    if (!parsedData.clientName) return;
     
+    // Simulate saving the client
     const newClient: CRMClient = {
       id: `client-${Date.now()}`,
-      name: newClientName,
-      phone: newClientPhone,
-      notes: newClientNotes,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newClientName)}&background=F4E8C8&color=D4AF37`,
-      tags: ['New'],
+      name: parsedData.clientName,
+      phone: parsedData.phone,
+      notes: parsedData.requirements,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(parsedData.clientName)}&background=F4E8C8&color=D4AF37`,
+      tags: ['New Inquiry'],
       totalSpent: 0,
       noShows: 0,
       lastVisit: 'Never',
@@ -831,10 +860,9 @@ const CRMScreen = () => {
     };
     
     MOCK_CLIENTS.push(newClient);
-    setIsAddClientModalOpen(false);
-    setNewClientName('');
-    setNewClientPhone('');
-    setNewClientNotes('');
+    setIsAIReviewOpen(false);
+    setAiInputText('');
+    setAiUploadedImages([]);
   };
 
   return (
@@ -844,9 +872,9 @@ const CRMScreen = () => {
         <p className="text-sm text-[#8E8E8E]">Here is your schedule for today.</p>
       </div>
 
-      {/* Search Bar & Add Client */}
-      <div className="px-6 mb-8 flex gap-3">
-        <div className="relative flex-1">
+      {/* Search Bar & AI Input */}
+      <div className="px-6 mb-8 flex flex-col gap-4">
+        <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search size={18} className="text-[#8E8E8E]" />
           </div>
@@ -859,10 +887,14 @@ const CRMScreen = () => {
           />
         </div>
         <button 
-          onClick={() => setIsAddClientModalOpen(true)}
-          className="flex-shrink-0 w-12 h-12 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center luxury-shadow active:scale-95 transition-transform"
+          onClick={() => setIsAIModalOpen(true)}
+          className="w-full bg-[#2C2C2C] text-white py-4 rounded-full flex items-center justify-center gap-2 luxury-shadow active:scale-95 transition-transform group"
         >
-          <Plus size={20} />
+          <div className="relative flex items-center justify-center">
+            <Sparkles size={18} className="text-[#D4AF37]" />
+            <div className="absolute inset-0 bg-[#D4AF37] blur-md opacity-20 group-hover:opacity-40 transition-opacity"></div>
+          </div>
+          <span className="font-medium text-sm tracking-widest uppercase ml-1">AI Inquiry Input</span>
         </button>
       </div>
 
@@ -1062,38 +1094,13 @@ const CRMScreen = () => {
         </div>
       </div>
 
-      {/* FAB Container */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto pointer-events-none z-40 h-full">
-        {/* FAB Menu */}
-        <AnimatePresence>
-          {isFabOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.9 }}
-              className="absolute bottom-40 right-6 flex flex-col items-end gap-3 pointer-events-auto"
-            >
-              <button
-                onClick={() => { setIsBlockModalOpen(true); setIsFabOpen(false); }}
-                className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full luxury-shadow text-sm font-medium text-[#2C2C2C] hover:bg-gray-50 transition-colors"
-              >
-                <span>Block Time</span>
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
-                  <Clock size={16} />
-                </div>
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* FAB */}
+      {/* FAB - AI Inquiry Input */}
+      <div className="fixed bottom-24 left-0 right-0 max-w-md mx-auto px-6 pointer-events-none z-40 flex justify-end">
         <button 
-          onClick={() => setIsFabOpen(!isFabOpen)}
-          className="absolute bottom-24 right-6 w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl pointer-events-auto hover:scale-105 transition-transform"
+          onClick={() => setIsAIModalOpen(true)}
+          className="w-14 h-14 bg-[#2C2C2C] text-white rounded-full flex items-center justify-center shadow-xl pointer-events-auto hover:scale-105 active:scale-95 transition-transform"
         >
-          <motion.div animate={{ rotate: isFabOpen ? 45 : 0 }}>
-            <Plus size={24} />
-          </motion.div>
+          <Plus size={24} />
         </button>
       </div>
 
@@ -1195,69 +1202,191 @@ const CRMScreen = () => {
         )}
       </AnimatePresence>
 
-      {/* Add Client Modal */}
+      {/* AI Inquiry Modals (Stage 1 & 2) */}
       <AnimatePresence>
-        {isAddClientModalOpen && (
+        {isAIModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsAddClientModalOpen(false)}
+              onClick={() => setIsAIModalOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white rounded-[32px] p-6 luxury-shadow"
+              className="relative w-full max-w-[400px] bg-white rounded-[32px] p-6 luxury-shadow"
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-serif text-xl text-[#2C2C2C]">Add New Client</h3>
-                <button onClick={() => setIsAddClientModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                <h3 className="font-serif text-2xl text-[#2C2C2C]">New Client Inquiry</h3>
+                <button onClick={() => setIsAIModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
                   <X size={20} />
                 </button>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div>
-                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                    placeholder="Client Name"
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={newClientPhone}
-                    onChange={(e) => setNewClientPhone(e.target.value)}
-                    placeholder="Phone Number"
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#8E8E8E] uppercase tracking-widest mb-2">Notes</label>
                   <textarea
-                    value={newClientNotes}
-                    onChange={(e) => setNewClientNotes(e.target.value)}
-                    placeholder="Any specific requests or notes..."
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-4 text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-24"
+                    value={aiInputText}
+                    onChange={(e) => setAiInputText(e.target.value)}
+                    placeholder="Describe the inquiry in natural language, e.g., Sarah Jenkins, Oct 24, Ritz-Carlton, Bridal Makeup Trial."
+                    className="w-full bg-gray-50 border border-gray-100 rounded-[20px] p-4 text-sm text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] transition-all resize-none h-32 placeholder-[#8E8E8E]/60 leading-relaxed"
                   />
+                </div>
+                
+                {/* Image Upload Area */}
+                <div className="space-y-3">
+                  <button className="flex items-center gap-2 text-sm text-[#2C2C2C] bg-white border border-gray-200 rounded-[16px] px-4 py-3 hover:border-[#D4AF37] transition-all group">
+                    <ImageIcon size={18} className="text-[#8E8E8E] group-hover:text-[#D4AF37] transition-colors" />
+                    <span className="font-medium">Upload Reference</span>
+                  </button>
+                  {aiUploadedImages.length > 0 && (
+                     <div className="flex gap-2 pb-2">
+                        {/* Placeholder for uploaded thumbnails */}
+                     </div>
+                  )}
                 </div>
               </div>
 
-              <button
-                onClick={handleSaveClient}
-                disabled={!newClientName}
-                className="w-full bg-[#2C2C2C] disabled:bg-gray-300 text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95"
-              >
-                Save Client
-              </button>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={handleAIPromptConfirm}
+                  disabled={!aiInputText.trim()}
+                  className="bg-[#2C2C2C] disabled:bg-gray-200 disabled:text-gray-400 text-white px-6 py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95 flex items-center justify-center gap-2 group"
+                >
+                  <Sparkles size={16} className="text-[#D4AF37] group-disabled:text-gray-400" />
+                  Identify & Confirm
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {isAIReviewOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 pb-safe">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsAIReviewOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              className="relative w-full max-w-[400px] h-[85vh] overflow-hidden bg-[#FAF9F6] rounded-[32px] luxury-shadow flex flex-col items-center"
+            >
+              {/* Header */}
+              <div className="w-full flex justify-between items-center px-6 py-6 border-b border-gray-100 bg-white">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Inquiry Confirmation</h3>
+                <button onClick={() => setIsAIReviewOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              {/* Scrollable Content */}
+              <div className="w-full flex-1 overflow-y-auto px-6 py-6 space-y-6 flex flex-col no-scrollbar">
+                
+                {/* Client Section */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium tracking-widest uppercase text-[#8E8E8E]">Client Details</h4>
+                  
+                  <div className="bg-white rounded-[20px] p-4 border border-gray-100 space-y-3">
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Client Name</label>
+                        <input 
+                          type="text"
+                          value={parsedData.clientName}
+                          onChange={(e) => setParsedData({...parsedData, clientName: e.target.value})}
+                          className="w-full font-medium text-[#2C2C2C] bg-transparent focus:outline-none"
+                        />
+                     </div>
+                     <div className="w-full h-px bg-gray-50" />
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Phone Number</label>
+                        <input 
+                          type="text"
+                          value={parsedData.phone}
+                          onChange={(e) => setParsedData({...parsedData, phone: e.target.value})}
+                          className="w-full font-medium text-[#2C2C2C] bg-transparent focus:outline-none"
+                        />
+                     </div>
+                  </div>
+                </div>
+
+                {/* Service Section */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium tracking-widest uppercase text-[#8E8E8E]">Service Details</h4>
+                  
+                  <div className="bg-white rounded-[20px] p-4 border border-gray-100 space-y-3">
+                     <div className="flex flex-col gap-1 relative">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Wedding / Event Date</label>
+                        <input 
+                          type="date"
+                          value={parsedData.date}
+                          onChange={(e) => setParsedData({...parsedData, date: e.target.value})}
+                          className="w-full font-medium text-[#2C2C2C] bg-transparent focus:outline-none pr-8 relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                        />
+                        <Calendar size={14} className="absolute right-0 bottom-1 text-[#8E8E8E] z-0 pointer-events-none" />
+                     </div>
+                     <div className="w-full h-px bg-gray-50" />
+                     <div className="flex flex-col gap-1 relative">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Location</label>
+                        <input 
+                          type="text"
+                          value={parsedData.location}
+                          onChange={(e) => setParsedData({...parsedData, location: e.target.value})}
+                          className="w-full font-medium text-[#2C2C2C] bg-transparent focus:outline-none pr-8"
+                        />
+                        <MapPin size={14} className="absolute right-0 bottom-1 text-[#8E8E8E]" />
+                     </div>
+                     <div className="w-full h-px bg-gray-50" />
+                     <div className="flex flex-col gap-1">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Inquiry Type</label>
+                        <input 
+                          type="text"
+                          value={parsedData.inquiryType}
+                          onChange={(e) => setParsedData({...parsedData, inquiryType: e.target.value})}
+                          className="w-full font-medium text-[#2C2C2C] bg-transparent focus:outline-none"
+                        />
+                     </div>
+                     <div className="w-full h-px bg-gray-50" />
+                     <div className="flex flex-col gap-2">
+                        <label className="text-[10px] uppercase tracking-widest text-[#8E8E8E]">Styling Requirements / Notes</label>
+                        <textarea 
+                          value={parsedData.requirements}
+                          onChange={(e) => setParsedData({...parsedData, requirements: e.target.value})}
+                          className="w-full text-sm text-[#2C2C2C] bg-transparent focus:outline-none resize-none h-20 leading-relaxed"
+                        />
+                     </div>
+                  </div>
+                </div>
+
+                {/* Reference Images Section */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium tracking-widest uppercase text-[#8E8E8E]">References & Photos</h4>
+                  <div className="bg-white rounded-[20px] p-4 border border-gray-100 flex flex-col gap-3">
+                    <button className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium text-[#8E8E8E] hover:text-[#D4AF37] hover:border-[#D4AF37] transition-colors">
+                      <ImageIcon size={18} /> Add Photos
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Action */}
+              <div className="w-full p-6 pt-4 bg-gradient-to-t from-[#FAF9F6] to-transparent">
+                <button
+                  onClick={handleFinalSubmit}
+                  className="w-full bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95 flex items-center justify-center gap-2"
+                >
+                  Final Submit
+                </button>
+              </div>
+
             </motion.div>
           </div>
         )}
@@ -1899,7 +2028,7 @@ const ArtistProfileScreen = () => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
       <Header 
-        title="My Artist Profile" 
+        title="Works Showcase" 
         rightElement={
           isEditing ? (
             <button 
@@ -1913,65 +2042,7 @@ const ArtistProfileScreen = () => {
         } 
       />
       
-      <div className="px-6 py-8 flex flex-col items-center text-center border-b border-gray-100">
-        <div className="relative w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden luxury-shadow">
-          <img src={artist.avatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          {isEditing && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] cursor-pointer">
-              <ImageIcon size={24} className="text-white" />
-            </div>
-          )}
-        </div>
-        
-        {isEditing ? (
-          <input 
-            type="text" 
-            value={name} 
-            onChange={(e) => setName(e.target.value)}
-            className="font-serif text-2xl text-[#2C2C2C] mb-2 text-center bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors" 
-          />
-        ) : (
-          <h2 className="font-serif text-2xl text-[#2C2C2C] mb-1">{name}</h2>
-        )}
-        
-        {isEditing ? (
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <input 
-              type="text" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-sm text-[#8E8E8E] text-right bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-32" 
-              placeholder="Title"
-            />
-            <span className="text-sm text-[#8E8E8E]">·</span>
-            <input 
-              type="text" 
-              value={city} 
-              onChange={(e) => setCity(e.target.value)}
-              className="text-sm text-[#8E8E8E] text-left bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors w-24" 
-              placeholder="City"
-            />
-          </div>
-        ) : (
-          <p className="text-sm text-[#8E8E8E]">{title} · {city}</p>
-        )}
-      </div>
-
       <div className="px-6 py-6 space-y-8">
-        {/* Bio Section */}
-        <div>
-          <h3 className="font-serif text-lg text-[#2C2C2C] mb-3">About Me</h3>
-          {isEditing ? (
-            <textarea 
-              value={bio} 
-              onChange={(e) => setBio(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-2xl p-4 text-sm text-[#2C2C2C] focus:outline-none focus:border-[#D4AF37] min-h-[100px] luxury-shadow transition-all" 
-            />
-          ) : (
-            <p className="text-sm text-[#8E8E8E] leading-relaxed bg-white p-5 rounded-[24px] luxury-shadow border border-gray-50">{bio}</p>
-          )}
-        </div>
-
         {/* Portfolio Section */}
         <div>
           <div className="flex justify-between items-center mb-4">
@@ -2301,23 +2372,15 @@ const ArtistProfileScreen = () => {
           )}
         </div>
 
-        {/* Settings / Logout */}
+        {/* Edit Button */}
         {!isEditing ? (
           <div className="space-y-4 mt-8">
             <button onClick={() => setIsEditing(true)} className="w-full bg-[#2C2C2C] text-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-white/20 transition-colors">
-                  <Settings size={18} />
+                  <Edit2 size={18} />
                 </div>
-                <span className="font-medium">Edit Profile</span>
-              </div>
-            </button>
-            <button onClick={() => navigate('/role-select')} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-[#FAF9F6] flex items-center justify-center text-red-400 group-hover:bg-red-50 transition-colors">
-                  <LogOut size={18} />
-                </div>
-                <span className="font-medium text-red-500">Switch Role / Logout</span>
+                <span className="font-medium">Edit Portfolio</span>
               </div>
             </button>
           </div>
@@ -2434,8 +2497,63 @@ const ArtistProfileScreen = () => {
   );
 };
 
+const AuthGuard = ({ children }: { children: React.ReactNode }) => {
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const location = useLocation();
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const ArtistLoginScreen = () => {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    // Mocking WeChat Cloud Base function call. AI and authentication logic must be handled safely at the backend.
+    console.log("Mocking Cloud Base Function call for WeChat OpenID.");
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    localStorage.setItem('isLoggedIn', 'true');
+    setIsLoading(false);
+    navigate('/crm', { replace: true });
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-[#FAF9F6] flex flex-col justify-center items-center px-6">
+      <div className="w-full max-w-sm flex flex-col items-center">
+        <div className="w-20 h-20 bg-white rounded-[24px] luxury-shadow flex items-center justify-center mb-8">
+          <Sparkles className="text-[#D4AF37]" size={36} />
+        </div>
+        <h1 className="font-serif text-3xl text-[#2C2C2C] mb-2 text-center">觅妆Meety</h1>
+        <p className="text-sm text-[#8E8E8E] mb-12 tracking-widest uppercase">化妆师私人助理</p>
+
+        <button 
+          onClick={handleLogin}
+          disabled={isLoading}
+          className="w-full bg-[#07C160] hover:bg-[#06ad56] text-white py-4 rounded-full text-sm font-medium shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <MessageCircle size={20} className="fill-white text-white" />
+          )}
+          <span>{isLoading ? '授权中...' : '微信一键授权登录'}</span>
+        </button>
+
+        <p className="text-[10px] text-[#8E8E8E] mt-6 text-center">
+          登录即表示同意<a href="#" className="underline">服务条款</a>和<a href="#" className="underline">隐私政策</a>
+        </p>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function App() {
-  const [role, setRole] = useState<'bride' | 'artist' | null>(null);
+  const [role, setRole] = useState<'bride' | 'artist' | null>('artist'); // Default to artist
 
   return (
     <Router>
@@ -2443,15 +2561,21 @@ export default function App() {
         <div className="w-full max-w-md bg-[#FAF9F6] min-h-screen shadow-2xl relative overflow-x-hidden">
           <AnimatePresence mode="wait">
             <Routes>
-              <Route path="/" element={role ? (role === 'bride' ? <HomeScreen /> : <CRMScreen />) : <RoleSelectScreen setRole={setRole} />} />
+              {/* === B-Side (Artist) Routes === */}
+              <Route path="/login" element={<ArtistLoginScreen />} />
+              <Route path="/" element={<AuthGuard><CRMScreen /></AuthGuard>} />
+              <Route path="/crm" element={<AuthGuard><CRMScreen /></AuthGuard>} />
+              <Route path="/crm/clients" element={<AuthGuard><ClientListScreen /></AuthGuard>} />
+              <Route path="/crm/client/:id" element={<AuthGuard><ClientArchiveScreen /></AuthGuard>} />
+              <Route path="/crm/profile" element={<AuthGuard><ArtistProfileScreen /></AuthGuard>} />
+              <Route path="/crm/appointment/:id" element={<AuthGuard><CRMAppointmentDetailScreen Header={Header} /></AuthGuard>} />
+              <Route path="/settings" element={<AuthGuard><SettingsScreen Header={Header} /></AuthGuard>} />
+
+              {/* === C-Side (Bride) Routes - Hidden / Commented Out === */}
+              {/* 
               <Route path="/role-select" element={<RoleSelectScreen setRole={setRole} />} />
               <Route path="/home" element={<HomeScreen />} />
               <Route path="/checklist" element={<ChecklistScreen />} />
-              <Route path="/crm" element={<CRMScreen />} />
-              <Route path="/crm/clients" element={<ClientListScreen />} />
-              <Route path="/crm/client/:id" element={<ClientArchiveScreen />} />
-              <Route path="/crm/profile" element={<ArtistProfileScreen />} />
-              <Route path="/crm/appointment/:id" element={<CRMAppointmentDetailScreen Header={Header} />} />
               <Route path="/ai-match" element={<AIMatchEntryScreen />} />
               <Route path="/ai-match/flow/:type" element={<AIMatchFlowScreenWrapper />} />
               <Route path="/ai-match/loading" element={<AIMatchLoadingScreen />} />
@@ -2463,10 +2587,10 @@ export default function App() {
               <Route path="/chat" element={<ChatScreen Header={Header} />} />
               <Route path="/order/:id" element={<OrderDetailsScreen Header={Header} />} />
               <Route path="/saved-artists" element={<SavedArtistsScreen Header={Header} />} />
-              <Route path="/settings" element={<SettingsScreen Header={Header} />} />
+              */}
             </Routes>
           </AnimatePresence>
-          {role && <BottomNav role={role} />}
+          <BottomNav role="artist" />
         </div>
       </div>
     </Router>

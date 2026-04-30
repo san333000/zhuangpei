@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2 } from 'lucide-react';
+import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2, GripVertical, Trash2, Edit2 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
 import Markdown from 'react-markdown';
@@ -13,20 +13,68 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   
-  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const [selectedDateIndices, setSelectedDateIndices] = useState<number[]>([0]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(artist.name);
+  const [editTitle, setEditTitle] = useState(artist.title);
+  const [editCity, setEditCity] = useState(artist.city);
+  const [editBio, setEditBio] = useState(artist.bio);
+  const [editPortfolio, setEditPortfolio] = useState(artist.portfolio);
+  const [editServices, setEditServices] = useState(artist.services);
+
+  const handleSave = () => {
+    artist.name = editName;
+    artist.title = editTitle;
+    artist.city = editCity;
+    artist.bio = editBio;
+    artist.portfolio = editPortfolio;
+    artist.services = editServices;
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditName(artist.name);
+    setEditTitle(artist.title);
+    setEditCity(artist.city);
+    setEditBio(artist.bio);
+    setEditPortfolio(artist.portfolio);
+    setEditServices(artist.services);
+    setIsEditing(false);
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
       {/* 1. Top bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-transparent">
-        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2C2C2C] luxury-shadow">
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-transparent pointer-events-none">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2C2C2C] luxury-shadow pointer-events-auto transition-transform active:scale-95">
           <ChevronLeft size={20} />
         </button>
-        <button onClick={() => setIsFavorite(!isFavorite)} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2C2C2C] luxury-shadow">
-          <Heart size={20} className={cn("transition-colors", isFavorite ? "fill-[#D4AF37] text-[#D4AF37]" : "")} />
-        </button>
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <AnimatePresence mode="wait">
+            {isEditing ? (
+              <motion.div key="edit-controls" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-2">
+                <button onClick={handleCancel} className="px-4 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#8E8E8E] text-sm font-medium luxury-shadow transition-transform active:scale-95">
+                  Cancel
+                </button>
+                <button onClick={handleSave} className="px-4 h-10 rounded-full bg-[#D4AF37] text-white text-sm font-medium luxury-shadow transition-transform active:scale-95">
+                  Save
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div key="view-controls" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="flex items-center gap-2">
+                <button onClick={() => setIsFavorite(!isFavorite)} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2C2C2C] luxury-shadow transition-transform active:scale-95">
+                  <Heart size={20} className={cn("transition-colors", isFavorite ? "fill-[#D4AF37] text-[#D4AF37]" : "")} />
+                </button>
+                <button onClick={() => setIsEditing(true)} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-[#2C2C2C] luxury-shadow transition-transform active:scale-95">
+                  <Edit2 size={16} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* 2. Full-width cover carousel */}
@@ -39,42 +87,126 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
         {/* 3. Artist info */}
         <div className="bg-white rounded-[32px] p-6 luxury-shadow border border-gray-50">
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="font-serif text-3xl text-[#2C2C2C] mb-1">{artist.name}</h2>
-              <p className="text-sm text-[#8E8E8E]">{artist.title} · {artist.city}</p>
+            <div className="flex-1 pr-4">
+              {isEditing ? (
+                <div className="space-y-2 mb-4">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="font-serif text-3xl text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-1 focus:outline-none focus:border-[#D4AF37]"
+                    placeholder="Name"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="text-sm text-[#8E8E8E] bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#D4AF37] flex-1"
+                      placeholder="Title"
+                    />
+                    <input
+                      type="text"
+                      value={editCity}
+                      onChange={(e) => setEditCity(e.target.value)}
+                      className="text-sm text-[#8E8E8E] bg-gray-50 border border-gray-100 rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#D4AF37] flex-1"
+                      placeholder="City"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2 className="font-serif text-3xl text-[#2C2C2C] mb-1">{editName}</h2>
+                  <p className="text-sm text-[#8E8E8E]">{editTitle} · {editCity}</p>
+                </>
+              )}
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-xs font-medium text-[#D4AF37] bg-[#F4E8C8]/50 px-2 py-1 rounded-md mb-1">98% Match</span>
-              <div className="flex items-center gap-1 text-xs font-medium text-[#2C2C2C]">
-                <Star size={12} className="text-[#D4AF37] fill-[#D4AF37]" /> {artist.rating}
+            {!isEditing && (
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-[#D4AF37] bg-[#F4E8C8]/50 px-2 py-1 rounded-md mb-1">98% Match</span>
+                <div className="flex items-center gap-1 text-xs font-medium text-[#2C2C2C]">
+                  <Star size={12} className="text-[#D4AF37] fill-[#D4AF37]" /> {artist.rating}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
-          <div className="flex flex-wrap gap-2 mb-4">
-            {artist.styles.map(style => (
-              <span key={style} className="text-[10px] uppercase tracking-widest bg-gray-50 text-[#8E8E8E] px-3 py-1.5 rounded-full">{style}</span>
-            ))}
-            <span className="text-[10px] uppercase tracking-widest bg-gray-50 text-[#8E8E8E] px-3 py-1.5 rounded-full">5+ Yrs Exp</span>
-          </div>
+          {!isEditing && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {artist.styles.map(style => (
+                <span key={style} className="text-[10px] uppercase tracking-widest bg-gray-50 text-[#8E8E8E] px-3 py-1.5 rounded-full">{style}</span>
+              ))}
+              <span className="text-[10px] uppercase tracking-widest bg-gray-50 text-[#8E8E8E] px-3 py-1.5 rounded-full">5+ Yrs Exp</span>
+            </div>
+          )}
 
-          <p className="text-sm text-[#2C2C2C]/80 leading-relaxed">{artist.bio}</p>
+          {isEditing ? (
+            <textarea
+              value={editBio}
+              onChange={(e) => setEditBio(e.target.value)}
+              className="text-sm text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 min-h-[100px] focus:outline-none focus:border-[#D4AF37]"
+              placeholder="Bio"
+            />
+          ) : (
+            <p className="text-sm text-[#2C2C2C]/80 leading-relaxed">{editBio}</p>
+          )}
         </div>
 
         {/* 4. Work gallery */}
         <div>
-          <h3 className="font-serif text-xl text-[#2C2C2C] mb-4 px-2">Work Gallery</h3>
+          <div className="flex justify-between items-center mb-4 px-2">
+            <h3 className="font-serif text-xl text-[#2C2C2C]">Work Gallery</h3>
+            {isEditing && (
+              <span className="text-xs text-[#8E8E8E] flex items-center gap-1">
+                <GripVertical size={12} /> Drag to reorder
+              </span>
+            )}
+          </div>
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 px-2">
-            {artist.portfolio.map((img, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => setSelectedImageIndex(idx)}
-                className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow relative cursor-pointer"
+            {isEditing ? (
+              <Reorder.Group 
+                axis="x" 
+                values={editPortfolio} 
+                onReorder={setEditPortfolio} 
+                className="flex gap-4"
               >
-                <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-white">After</div>
-              </div>
-            ))}
+                {editPortfolio.map((img, idx) => (
+                  <Reorder.Item 
+                    key={img} 
+                    value={img} 
+                    className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow relative cursor-grab active:cursor-grabbing"
+                  >
+                    <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditPortfolio(editPortfolio.filter((_, i) => i !== idx));
+                      }}
+                      className="absolute top-3 right-3 w-8 h-8 bg-red-500/80 backdrop-blur-md rounded-full flex items-center justify-center text-white"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </Reorder.Item>
+                ))}
+                <button 
+                  className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-[#8E8E8E] hover:border-[#D4AF37] hover:text-[#D4AF37] transition-colors"
+                >
+                  <Plus size={24} className="mb-2" />
+                  <span className="text-xs font-medium uppercase tracking-widest">Add Image</span>
+                </button>
+              </Reorder.Group>
+            ) : (
+              editPortfolio.map((img, idx) => (
+                <div 
+                  key={idx} 
+                  onClick={() => setSelectedImageIndex(idx)}
+                  className="w-48 flex-shrink-0 aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow relative cursor-pointer"
+                >
+                  <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-white">After</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -99,70 +231,186 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
             ))}
           </div>
 
-          <div className="space-y-4">
-            {(selectedCategory === 'All' ? artist.services : artist.services.filter(s => s.category === selectedCategory)).map((service, idx) => (
-              <div key={idx} className="bg-white rounded-[24px] p-6 luxury-shadow border border-gray-50 relative group">
-                <div className="flex justify-between items-start mb-3">
-                  <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
-                  <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
-                </div>
-                <div className="text-sm text-[#8E8E8E] mb-4 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                  <Markdown>{service.description}</Markdown>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
-                      <Clock size={12} />
-                      <span>{service.duration}</span>
+          <Reorder.Group 
+            axis="y" 
+            values={isEditing ? editServices : (selectedCategory === 'All' ? artist.services : artist.services.filter(s => s.category === selectedCategory))} 
+            onReorder={isEditing ? setEditServices : () => {}} 
+            className="space-y-4"
+          >
+            {(isEditing ? editServices : (selectedCategory === 'All' ? artist.services : artist.services.filter(s => s.category === selectedCategory))).map((service, idx) => (
+              <Reorder.Item 
+                key={service.id} 
+                value={service} 
+                dragListener={isEditing}
+                className={cn(
+                  "bg-white rounded-[24px] p-6 border border-gray-50 relative group",
+                  isEditing ? "luxury-shadow-sm border-gray-200" : "luxury-shadow"
+                )}
+              >
+                {isEditing && (
+                  <button 
+                    onClick={() => {
+                      setEditServices(editServices.filter(s => s.id !== service.id));
+                    }}
+                    className="absolute top-4 right-4 p-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors z-10"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+                
+                {isEditing ? (
+                  <div className="space-y-3 pr-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-gray-300 cursor-grab active:cursor-grabbing">
+                        <GripVertical size={20} />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={service.name}
+                        onChange={(e) => {
+                          const newServices = [...editServices];
+                          newServices[idx].name = e.target.value;
+                          setEditServices(newServices);
+                        }}
+                        className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        placeholder="Service Name"
+                      />
                     </div>
-                    {service.category && (
-                      <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
-                        {service.category}
+                    <div className="flex gap-3">
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <select
+                          value={service.category || ''}
+                          onChange={(e) => {
+                            const newServices = [...editServices];
+                            newServices[idx].category = e.target.value;
+                            setEditServices(newServices);
+                          }}
+                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        >
+                          <option value="">Category...</option>
+                          <option value="Bridal">Bridal</option>
+                          <option value="Event">Event</option>
+                          <option value="Daily Makeup">Daily Makeup</option>
+                          <option value="Photoshoot">Photoshoot</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <input 
+                          type="number" 
+                          value={service.price}
+                          onChange={(e) => {
+                            const newServices = [...editServices];
+                            newServices[idx].price = Number(e.target.value);
+                            setEditServices(newServices);
+                          }}
+                          className="font-serif text-[#D4AF37] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                          placeholder="Price"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                      <div className="w-1/3 flex flex-col gap-1">
+                        <select
+                          value={service.duration || ''}
+                          onChange={(e) => {
+                            const newServices = [...editServices];
+                            newServices[idx].duration = e.target.value;
+                            setEditServices(newServices);
+                          }}
+                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                        >
+                          <option value="">Duration...</option>
+                          <option value="30 mins">30 mins</option>
+                          <option value="45 mins">45 mins</option>
+                          <option value="1 hour">1 hour</option>
+                          <option value="1.5 hours">1.5 hours</option>
+                          <option value="2 hours">2 hours</option>
+                          <option value="2.5 hours">2.5 hours</option>
+                          <option value="3 hours">3 hours</option>
+                          <option value="4 hours">4 hours</option>
+                          <option value="5+ hours">5+ hours</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <textarea
+                        value={service.description}
+                        onChange={(e) => {
+                          const newServices = [...editServices];
+                          newServices[idx].description = e.target.value;
+                          setEditServices(newServices);
+                        }}
+                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[80px]"
+                        placeholder="Description (Markdown supported)"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
+                      <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
+                    </div>
+                    <div className="text-sm text-[#8E8E8E] mb-4 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                      <Markdown>{service.description}</Markdown>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
+                          <Clock size={12} />
+                          <span>{service.duration}</span>
+                        </div>
+                        {service.category && (
+                          <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
+                            {service.category}
+                          </div>
+                        )}
+                        {service.videoUrl && (
+                          <a 
+                            href={service.videoUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md"
+                          >
+                            <PlayCircle size={12} /> Watch Video
+                          </a>
+                        )}
+                      </div>
+                      <button onClick={() => navigate(`/book/${artist.id}`)} className="px-4 py-2 bg-[#F4E8C8]/30 text-[#D4AF37] rounded-full text-xs font-medium tracking-widest uppercase">
+                        Select
+                      </button>
+                    </div>
+
+                    {/* Tooltip */}
+                    {(service.materialsUsed || service.stylingNotes) && (
+                      <div className="absolute left-0 right-0 -top-2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+                        <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
+                          {service.materialsUsed && (
+                            <div className="mb-2">
+                              <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1">Materials:</span>
+                              <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                                <Markdown>{service.materialsUsed}</Markdown>
+                              </div>
+                            </div>
+                          )}
+                          {service.stylingNotes && (
+                            <div>
+                              <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Styling & Suitability:</span>
+                              <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                                <Markdown>{service.stylingNotes}</Markdown>
+                              </div>
+                            </div>
+                          )}
+                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
+                        </div>
                       </div>
                     )}
-                    {service.videoUrl && (
-                      <a 
-                        href={service.videoUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md"
-                      >
-                        <PlayCircle size={12} /> Watch Video
-                      </a>
-                    )}
-                  </div>
-                  <button onClick={() => navigate(`/book/${artist.id}`)} className="px-4 py-2 bg-[#F4E8C8]/30 text-[#D4AF37] rounded-full text-xs font-medium tracking-widest uppercase">
-                    Select
-                  </button>
-                </div>
-
-                {/* Tooltip */}
-                {(service.materialsUsed || service.stylingNotes) && (
-                  <div className="absolute left-0 right-0 -top-2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-                    <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
-                      {service.materialsUsed && (
-                        <div className="mb-2">
-                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1">Materials:</span>
-                          <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
-                            <Markdown>{service.materialsUsed}</Markdown>
-                          </div>
-                        </div>
-                      )}
-                      {service.stylingNotes && (
-                        <div>
-                          <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Styling & Suitability:</span>
-                          <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
-                            <Markdown>{service.stylingNotes}</Markdown>
-                          </div>
-                        </div>
-                      )}
-                      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
-                    </div>
-                  </div>
+                  </>
                 )}
-              </div>
+              </Reorder.Item>
             ))}
-          </div>
+          </Reorder.Group>
         </div>
 
         {/* Availability Calendar */}
@@ -174,12 +422,18 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
               {[...Array(7)].map((_, i) => {
                 const date = new Date();
                 date.setDate(date.getDate() + i);
-                const isSelected = i === selectedDateIndex;
+                const isSelected = selectedDateIndices.includes(i);
                 return (
                   <div 
                     key={i} 
                     onClick={() => {
-                      setSelectedDateIndex(i);
+                      setSelectedDateIndices(prev => {
+                        if (prev.includes(i)) {
+                          if (prev.length === 1) return prev; // Keep at least one selected
+                          return prev.filter(idx => idx !== i);
+                        }
+                        return [...prev, i].sort();
+                      });
                       setSelectedTimeSlot(null);
                     }}
                     className={cn(
@@ -222,7 +476,7 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
                 onClick={() => navigate(`/book/${artist.id}`)}
                 className="w-full mt-6 bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all"
               >
-                Book {selectedTimeSlot}
+                Book {selectedDateIndices.length > 1 ? `across ${selectedDateIndices.length} days at ${selectedTimeSlot}` : selectedTimeSlot}
               </motion.button>
             )}
           </div>
@@ -678,15 +932,41 @@ export const SavedArtistsScreen = ({ Header }: any) => {
 export const SettingsScreen = ({ Header }: any) => {
   const navigate = useNavigate();
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen">
-      <Header title="Settings" showBack />
-      <div className="px-6 py-6 space-y-4">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
+      <Header title="Personal Center" />
+      
+      {/* Profile Section Added from Portfolio */}
+      <div className="px-6 py-8 flex flex-col items-center text-center border-b border-gray-100">
+        <div className="relative w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden luxury-shadow">
+          <img src={MOCK_MUAS[1].avatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        </div>
+        <h2 className="font-serif text-2xl text-[#2C2C2C] mb-1">{MOCK_MUAS[1].name}</h2>
+        <p className="text-sm text-[#8E8E8E]">{MOCK_MUAS[1].title} · {MOCK_MUAS[1].city}</p>
+      </div>
+
+      <div className="px-6 py-6">
+        <h3 className="font-serif text-lg text-[#2C2C2C] mb-3">About Me</h3>
+        <p className="text-sm text-[#8E8E8E] leading-relaxed bg-white p-5 rounded-[24px] luxury-shadow border border-gray-50">{MOCK_MUAS[1].bio}</p>
+      </div>
+      
+      <div className="px-6 py-2 space-y-4">
         {['Notifications', 'Privacy', 'Payment Methods', 'Help & Support'].map(item => (
           <button key={item} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
             <span className="font-medium text-[#2C2C2C]">{item}</span>
             <ChevronLeft size={20} className="text-[#8E8E8E] rotate-180" />
           </button>
         ))}
+        
+        <button 
+          onClick={() => {
+            localStorage.removeItem('isLoggedIn');
+            navigate('/login');
+          }}
+          className="w-full mt-8 bg-red-50 text-red-500 rounded-[24px] p-5 flex items-center justify-center gap-2 luxury-shadow group active:scale-95 transition-all"
+        >
+          <LogOut size={18} />
+          <span className="font-medium">Logout</span>
+        </button>
       </div>
     </motion.div>
   );

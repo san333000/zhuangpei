@@ -1,26 +1,20 @@
-import { GoogleGenAI } from '@google/genai';
+// 严格限制： 所有的后端逻辑和 AI 辅助功能集成必须直接在云函数层面完成，禁止引入或依赖任何外部的第三方配置模型。
+// import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const generateServiceRecommendation = async (clientData: any) => {
+  /*
   const prompt = `
-    You are an expert makeup artist assistant. Based on the following client profile, recommend a new makeup service or package they might be interested in.
-    Keep the recommendation concise, professional, and personalized. Output only the recommendation text (max 3 sentences).
-    
-    Client Name: ${clientData.name}
-    Tags: ${clientData.tags.join(', ')}
-    Notes: ${clientData.notes}
-    Past Services: ${clientData.history.map((h: any) => h.service).join(', ')}
+    ...
   `;
+  */
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-    return response.text;
-  } catch (error) {
-    console.error("Error generating recommendation:", error);
-    return "Unable to generate recommendation at this time. Please try again later.";
-  }
+  // TODO: Replace with WeChat Cloud Base (Cloud Function) call
+  console.log("Mocking Cloud Base Function call for AI integration. AI must be handled securely in backend.");
+  return new Promise<string>((resolve) => {
+    setTimeout(() => {
+      resolve(`[Cloud Function Target]: Suggest a touch-up package for ${clientData.name} based on their history.`);
+    }, 1000);
+  });
 };
