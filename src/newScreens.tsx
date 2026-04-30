@@ -1095,3 +1095,96 @@ export const CRMAppointmentDetailScreen = ({ Header }: any) => {
     </motion.div>
   );
 };
+
+export const MonthlyTrackingScreen = ({ Header }: any) => {
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
+
+  const pendingClients = [
+    { id: '1', name: 'Sarah Jenkins', type: 'Bridal Trial', date: 'Oct 24, 2026', status: 'Waiting for Trial', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80' },
+    { id: '2', name: 'Emily Davis', type: 'Wedding Day', date: 'Nov 12, 2026', status: 'Payment Pending', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
+    { id: '3', name: 'Jessica Chen', type: 'Event Makeup', date: 'Oct 30, 2026', status: 'Confirm Details', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80' },
+  ];
+
+  const completedClients = [
+    { id: '4', name: 'Amanda Smith', type: 'Wedding Day', date: 'Oct 15, 2026', status: 'Completed', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&q=80' },
+    { id: '5', name: 'Linda Lee', type: 'Bridal Trial', date: 'Oct 10, 2026', status: 'Completed', avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&q=80' },
+  ];
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
+      <Header title="Monthly Overview" showBack />
+      
+      {/* Tabs */}
+      <div className="px-6 py-4 flex gap-6 border-b border-gray-100 sticky top-[72px] bg-[#FAF9F6] z-10">
+        <button 
+          onClick={() => setActiveTab('pending')}
+          className={cn(
+            "pb-3 text-sm font-medium transition-colors relative",
+            activeTab === 'pending' ? "text-[#D4AF37]" : "text-[#8E8E8E]"
+          )}
+        >
+          Pending (待完成)
+          {activeTab === 'pending' && (
+            <motion.div layoutId="trackingTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] rounded-t-full" />
+          )}
+        </button>
+        <button 
+          onClick={() => setActiveTab('completed')}
+          className={cn(
+            "pb-3 text-sm font-medium transition-colors relative",
+            activeTab === 'completed' ? "text-[#D4AF37]" : "text-[#8E8E8E]"
+          )}
+        >
+          Completed (已完成)
+          {activeTab === 'completed' && (
+            <motion.div layoutId="trackingTabIndicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#D4AF37] rounded-t-full" />
+          )}
+        </button>
+      </div>
+
+      <div className="px-6 py-6 space-y-4">
+        <AnimatePresence mode="popLayout">
+          {activeTab === 'pending' ? (
+            <motion.div key="pending" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+              {pendingClients.map(client => (
+                <div key={client.id} className="bg-white rounded-[24px] p-5 luxury-shadow flex items-center justify-between">
+                  <div className="flex gap-4 items-center">
+                    <img src={client.avatar} alt={client.name} className="w-12 h-12 rounded-full object-cover" referrerPolicy="no-referrer" />
+                    <div>
+                      <h4 className="font-serif text-[17px] text-[#2C2C2C] mb-1">{client.name}</h4>
+                      <p className="text-xs text-[#8E8E8E] mb-2">{client.type} · {client.date}</p>
+                      <span className="px-2.5 py-1 bg-[#F4E8C8]/30 text-[#D4AF37] text-[10px] uppercase tracking-widest rounded-md font-medium">
+                        {client.status}
+                      </span>
+                    </div>
+                  </div>
+                  <button className="h-10 px-4 rounded-full border border-gray-200 text-[#2C2C2C] text-xs font-medium uppercase tracking-widest hover:border-[#D4AF37] transition-colors shrink-0">
+                    Follow Up
+                  </button>
+                </div>
+              ))}
+            </motion.div>
+          ) : (
+            <motion.div key="completed" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+              {completedClients.map(client => (
+                <div key={client.id} className="bg-white rounded-[24px] p-5 luxury-shadow flex items-center justify-between">
+                  <div className="flex gap-4 items-center">
+                    <img src={client.avatar} alt={client.name} className="w-12 h-12 rounded-full object-cover grayscale opacity-80" referrerPolicy="no-referrer" />
+                    <div>
+                      <h4 className="font-serif text-[17px] text-[#2C2C2C] mb-1">{client.name}</h4>
+                      <p className="text-xs text-[#8E8E8E] mb-2">{client.type}</p>
+                      <span className="text-xs text-[#2C2C2C]/50">Served on {client.date}</span>
+                    </div>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-[#07C160] shrink-0">
+                    <CheckCircle2 size={20} strokeWidth={2} />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+};

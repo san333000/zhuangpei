@@ -6,11 +6,11 @@ import {
   Home, Sparkles, User, ChevronLeft, Calendar, 
   CheckCircle2, ArrowRight, Clock, MapPin, MessageCircle, 
   Plus, ChevronDown, ChevronUp, Search, Settings, Heart, LogOut, Phone,
-  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload, PlayCircle, Video, Edit2
+  ChevronRight, Star, Users, Image as ImageIcon, X, Trash2, GripVertical, Upload, PlayCircle, Video, Edit2, Share
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
-import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen } from './newScreens';
+import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen, MonthlyTrackingScreen } from './newScreens';
 import { AIMatchEntryScreen, AIMatchFlowScreen, AIMatchLoadingScreen, MatchResultScreen } from './AIMatch';
 import { generateServiceRecommendation } from './services/geminiService';
 import MDEditor from '@uiw/react-md-editor';
@@ -23,7 +23,7 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   
   const mainTabs = [
     '/', '/home', '/checklist', '/ai-match', '/ai-match/results', '/bookings', '/profile',
-    '/crm', '/crm/clients', '/crm/profile', '/settings'
+    '/crm', '/crm/clients', '/crm/gallery', '/settings'
   ];
   
   if (!mainTabs.includes(location.pathname)) return null;
@@ -37,7 +37,7 @@ const BottomNav = ({ role }: { role: 'bride' | 'artist' }) => {
   ] : [
     { path: '/', icon: Home, label: 'Workspace' },
     { path: '/crm/clients', icon: Users, label: 'Clients' },
-    { path: '/crm/profile', icon: ImageIcon, label: 'Gallery' },
+    { path: '/crm/gallery', icon: ImageIcon, label: 'Gallery' },
     { path: '/settings', icon: User, label: 'Center' },
   ];
 
@@ -757,6 +757,7 @@ const ChecklistScreen = () => {
 };
 
 const CRMScreen = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
   const [isFabOpen, setIsFabOpen] = useState(false);
@@ -899,9 +900,12 @@ const CRMScreen = () => {
       </div>
 
       {/* Financial Snapshot & Performance */}
-      <div className="px-6 mb-8">
-        <div className="bg-[#2C2C2C] rounded-[32px] p-8 text-[#FAF9F6] luxury-shadow">
-          <div className="flex justify-between items-start mb-6">
+      <div className="px-6 mb-8 cursor-pointer group" onClick={() => navigate('/crm/monthly-tracking')}>
+        <div className="bg-[#2C2C2C] rounded-[32px] p-8 text-[#FAF9F6] luxury-shadow relative">
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+             <ChevronRight size={24} className="text-[#D4AF37]" />
+          </div>
+          <div className="flex justify-between items-start mb-6 pr-8">
             <div>
               <p className="text-xs text-[#FAF9F6]/60 tracking-widest uppercase mb-2">Monthly Earnings</p>
               <p className="font-serif text-4xl">$4,500</p>
@@ -911,57 +915,19 @@ const CRMScreen = () => {
               <p className="font-serif text-2xl text-[#D4AF37]">1.2k</p>
             </div>
           </div>
-          <div className="flex justify-between border-t border-[#FAF9F6]/10 pt-6">
+          <div className="flex justify-between border-t border-[#FAF9F6]/10 pt-6 pr-8">
             <div>
               <p className="text-xl font-medium">12</p>
-              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Upcoming</p>
+              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Pending</p>
             </div>
             <div>
-              <p className="text-xl font-medium">85%</p>
-              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Booking Rate</p>
+              <p className="text-xl font-medium">28</p>
+              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Completed</p>
             </div>
             <div>
-              <p className="text-xl font-medium">4.9</p>
-              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Rating</p>
+              <p className="text-xl font-medium">70%</p>
+              <p className="text-[10px] text-[#FAF9F6]/60 tracking-widest uppercase mt-1">Completion</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Inquiries */}
-      <div className="px-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-serif text-xl text-[#2C2C2C]">Recent Inquiries</h3>
-          <Link to="/chat" className="text-xs text-[#D4AF37] font-medium uppercase tracking-widest">View All</Link>
-        </div>
-        <div className="bg-white rounded-[24px] p-5 luxury-shadow border border-gray-50 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#F4E8C8] flex items-center justify-center text-[#D4AF37]">
-                <User size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#2C2C2C]">Sarah Jenkins</p>
-                <p className="text-xs text-[#8E8E8E]">Wedding on Oct 24 • 1h ago</p>
-              </div>
-            </div>
-            <Link to="/chat" className="px-4 py-2 bg-[#2C2C2C] text-white rounded-full text-[10px] uppercase tracking-widest font-medium active:scale-95 transition-transform">
-              Reply
-            </Link>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[#8E8E8E]">
-                <User size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-[#2C2C2C]">Emily Davis</p>
-                <p className="text-xs text-[#8E8E8E]">Trial makeup inquiry • 3h ago</p>
-              </div>
-            </div>
-            <Link to="/chat" className="px-4 py-2 border border-[#2C2C2C] text-[#2C2C2C] rounded-full text-[10px] uppercase tracking-widest font-medium active:scale-95 transition-transform">
-              Reply
-            </Link>
           </div>
         </div>
       </div>
@@ -1236,29 +1202,27 @@ const CRMScreen = () => {
                   />
                 </div>
                 
-                {/* Image Upload Area */}
-                <div className="space-y-3">
-                  <button className="flex items-center gap-2 text-sm text-[#2C2C2C] bg-white border border-gray-200 rounded-[16px] px-4 py-3 hover:border-[#D4AF37] transition-all group">
-                    <ImageIcon size={18} className="text-[#8E8E8E] group-hover:text-[#D4AF37] transition-colors" />
-                    <span className="font-medium">Upload Reference</span>
+                {/* Actions Area */}
+                <div className="flex flex-col items-center gap-4 mt-2">
+                  <button className="w-[220px] flex items-center justify-center gap-2 text-[11px] text-[#2C2C2C] bg-white border border-gray-200 rounded-full px-6 py-4 hover:border-[#D4AF37] transition-all group tracking-widest uppercase font-medium">
+                    <ImageIcon size={16} className="text-[#8E8E8E] group-hover:text-[#D4AF37] transition-colors" />
+                    Upload Reference
                   </button>
+                  <button
+                    onClick={handleAIPromptConfirm}
+                    disabled={!aiInputText.trim()}
+                    className="w-[220px] bg-[#2C2C2C] disabled:bg-gray-200 disabled:text-gray-400 text-white px-6 py-4 rounded-full text-[11px] font-medium tracking-widest uppercase transition-transform active:scale-95 flex items-center justify-center gap-2 group"
+                  >
+                    <Sparkles size={16} className="text-[#D4AF37] group-disabled:text-gray-400" />
+                    Identify & Confirm
+                  </button>
+                  
                   {aiUploadedImages.length > 0 && (
-                     <div className="flex gap-2 pb-2">
+                     <div className="flex justify-center gap-2">
                         {/* Placeholder for uploaded thumbnails */}
                      </div>
                   )}
                 </div>
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={handleAIPromptConfirm}
-                  disabled={!aiInputText.trim()}
-                  className="bg-[#2C2C2C] disabled:bg-gray-200 disabled:text-gray-400 text-white px-6 py-4 rounded-full text-xs font-medium tracking-widest uppercase transition-transform active:scale-95 flex items-center justify-center gap-2 group"
-                >
-                  <Sparkles size={16} className="text-[#D4AF37] group-disabled:text-gray-400" />
-                  Identify & Confirm
-                </button>
               </div>
             </motion.div>
           </div>
@@ -1401,6 +1365,19 @@ const ClientArchiveScreen = () => {
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState(client.name);
+  const [editPhone, setEditPhone] = useState(client.phone || '');
+  
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [clientStatus, setClientStatus] = useState<string>('Inquiry / Unbooked');
+  
+  const handleSaveProfile = () => {
+    client.name = editName;
+    client.phone = editPhone;
+    setIsEditingProfile(false);
+  };
+
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
@@ -1484,8 +1461,31 @@ const ClientArchiveScreen = () => {
       {/* Profile Header */}
       <div className="px-6 py-8 flex flex-col items-center text-center">
         <img src={client.avatar} className="w-28 h-28 rounded-full object-cover mb-4 luxury-shadow" referrerPolicy="no-referrer" />
-        <h2 className="font-serif text-2xl text-[#2C2C2C] mb-2">{client.name}</h2>
-        <p className="text-sm text-[#8E8E8E] mb-4">{client.phone}</p>
+        
+        {isEditingProfile ? (
+          <>
+            <input 
+              type="text" 
+              value={editName} 
+              onChange={(e) => setEditName(e.target.value)}
+              className="font-serif text-2xl text-[#2C2C2C] mb-2 text-center bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors" 
+              placeholder="Name"
+            />
+            <input 
+              type="text" 
+              value={editPhone} 
+              onChange={(e) => setEditPhone(e.target.value)}
+              className="text-sm text-[#8E8E8E] mb-4 text-center bg-transparent border-b border-gray-300 focus:outline-none focus:border-[#D4AF37] transition-colors" 
+              placeholder="Phone"
+            />
+          </>
+        ) : (
+          <>
+             <h2 className="font-serif text-2xl text-[#2C2C2C] mb-2">{client.name}</h2>
+             <p className="text-sm text-[#8E8E8E] mb-4">{client.phone}</p>
+          </>
+        )}
+        
         <div className="flex gap-2">
           {client.tags.map(tag => (
             <span key={tag} className="px-3 py-1 bg-[#F4E8C8]/50 text-[#D4AF37] text-[10px] uppercase tracking-widest rounded-full font-medium">
@@ -1683,9 +1683,93 @@ const ClientArchiveScreen = () => {
 
       {/* Sticky Bottom Action */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#FAF9F6] via-[#FAF9F6] to-transparent max-w-md mx-auto z-40 flex gap-4">
-        <button className="flex-1 border border-[#2C2C2C] text-[#2C2C2C] py-4 rounded-full text-xs font-medium tracking-widest uppercase bg-[#FAF9F6]/80 backdrop-blur-md">Message</button>
-        <button className="flex-1 bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl">Book New</button>
+        <button 
+          onClick={() => {
+            if (isEditingProfile) {
+              handleSaveProfile();
+            } else {
+              setIsEditingProfile(true);
+            }
+          }}
+          className="flex-1 border border-[#2C2C2C] text-[#2C2C2C] py-4 rounded-full text-[11px] font-medium tracking-widest uppercase bg-[#FAF9F6]/80 backdrop-blur-md active:scale-95 transition-all"
+        >
+          {isEditingProfile ? <span className="text-[#D4AF37]">Save</span> : "Edit Profile"}
+        </button>
+        <button 
+          onClick={() => setIsStatusModalOpen(true)}
+          className="flex-1 bg-[#2C2C2C] text-white py-4 rounded-full text-[11px] font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all"
+        >
+          Update Status
+        </button>
       </div>
+
+      {/* Update Status Modal */}
+      <AnimatePresence>
+        {isStatusModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setIsStatusModalOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md bg-[#FAF9F6] rounded-t-[32px] sm:rounded-[32px] p-6 pb-12 sm:pb-6 luxury-shadow"
+            >
+              <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6 sm:hidden" />
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-xl text-[#2C2C2C]">Update Client Status</h3>
+                <button onClick={() => setIsStatusModalOpen(false)} className="text-[#8E8E8E] hover:text-[#2C2C2C] transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-8">
+                {[
+                  { label: 'Inquiry / Unbooked', color: 'bg-gray-300' },
+                  { label: 'Booked / Deposit Paid', color: 'bg-[#D4AF37]' },
+                  { label: 'Needs Reschedule', color: 'bg-orange-400' },
+                  { label: 'Completed / Archived', color: 'bg-[#2C2C2C]' }
+                ].map((status) => (
+                  <button
+                    key={status.label}
+                    onClick={() => setClientStatus(status.label)}
+                    className={cn(
+                      "w-full flex items-center justify-between p-4 rounded-[20px] transition-all",
+                      clientStatus === status.label ? "bg-white luxury-shadow border border-gray-100" : "bg-transparent border border-transparent hover:bg-black/5"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-3 h-3 rounded-full", status.color)} />
+                      <span className={cn("font-medium", clientStatus === status.label ? "text-[#2C2C2C]" : "text-[#8E8E8E]")}>
+                        {status.label}
+                      </span>
+                    </div>
+                    {clientStatus === status.label && (
+                      <CheckCircle2 size={18} className="text-[#D4AF37]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  // Apply Status Logic here
+                  setIsStatusModalOpen(false);
+                }}
+                className="w-full bg-[#2C2C2C] text-white py-4 rounded-full text-xs font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all"
+              >
+                Confirm
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Add/Edit Note Modal */}
       <AnimatePresence>
@@ -1976,6 +2060,265 @@ const ClientListScreen = () => {
           )}
         </div>
       </div>
+    </motion.div>
+  );
+};
+
+const GalleryScreen = () => {
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [isNewPortfolioOpen, setIsNewPortfolioOpen] = useState(false);
+  const artist = MOCK_MUAS[1]; // Elena Rostova
+
+  const [galleryItems, setGalleryItems] = useState([
+    {
+      id: 1,
+      image: artist.portfolio[0] || 'https://images.unsplash.com/photo-1522673607200-164883eecd4c?w=800&q=80',
+      title: 'Ethereal Glow',
+      category: 'BRIDAL GLAM'
+    },
+    {
+      id: 2,
+      image: artist.portfolio[1] || 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80',
+      title: 'Soft Matte Excellence',
+      category: 'DAILY STYLES'
+    },
+    {
+      id: 3,
+      image: artist.portfolio[2] || 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
+      title: 'Modern Event Glam',
+      category: 'EVENT'
+    }
+  ]);
+
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategoryModal, setNewCategoryModal] = useState('Bridal Glam');
+  const [newLink, setNewLink] = useState('');
+
+  const categories = ['All', 'Bridal Glam', 'Daily Styles', 'Event'];
+  const modalCategories = ['Bridal Glam', 'Editorial', 'Daily Styles', 'Masterclass'];
+  
+  const filteredItems = selectedCategory === 'All' 
+    ? galleryItems 
+    : galleryItems.filter(item => item.category.toLowerCase() === selectedCategory.toLowerCase());
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleWechatShare = (lookTitle: string) => {
+    showToast(`Ready to share "${lookTitle}" to WeChat`);
+  };
+
+  const handleCreatePortfolio = () => {
+    if (!newTitle) {
+      showToast('Please enter a title');
+      return;
+    }
+    
+    const newItem = {
+      id: Date.now(),
+      image: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80', // Mock image
+      title: newTitle,
+      category: newCategoryModal.toUpperCase()
+    };
+
+    setGalleryItems([newItem, ...galleryItems]);
+    setIsNewPortfolioOpen(false);
+    setNewTitle('');
+    setNewCategoryModal('Bridal Glam');
+    setNewLink('');
+    showToast('Portfolio item created');
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6] relative">
+      <header className="sticky top-0 bg-[#FAF9F6]/90 backdrop-blur-md z-40 px-6 pt-12 pb-4 flex flex-col items-center max-w-md mx-auto">
+        <h1 className="text-xl font-serif text-[#D4AF37] tracking-[0.2em] uppercase mb-6 text-center w-full">GALLERY</h1>
+        
+        {/* Filter Tabs */}
+        <div className="w-full overflow-x-auto no-scrollbar pb-1 -mx-6 px-6">
+          <div className="flex gap-2">
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={cn(
+                  "px-5 py-2 rounded-full text-[11px] font-medium whitespace-nowrap transition-all uppercase tracking-widest border",
+                  selectedCategory === category 
+                    ? "bg-[#2C2C2C] text-white border-[#2C2C2C] shadow-md" 
+                    : "bg-white/60 text-[#8E8E8E] border-gray-200 hover:border-[#D4AF37] backdrop-blur-sm"
+                )}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <div className="px-6 py-2 space-y-8 max-w-md mx-auto">
+        <AnimatePresence>
+          {filteredItems.map(item => (
+            <motion.div 
+              key={item.id} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              layout
+              className="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden luxury-shadow group"
+            >
+              <img 
+                src={item.image} 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                referrerPolicy="no-referrer" 
+                alt={item.title} 
+              />
+              
+              {/* Glassmorphism Info Overlay */}
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-[24px] p-5 flex items-center justify-between shadow-lg">
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="font-serif text-xl text-[#2C2C2C] font-semibold">{item.title}</h3>
+                    <span className="text-[9px] text-[#2C2C2C]/80 uppercase tracking-[0.2em] font-medium">{item.category}</span>
+                  </div>
+                  <button 
+                    onClick={() => handleWechatShare(item.title)}
+                    className="w-12 h-12 rounded-full bg-white/40 hover:bg-white/60 transition-colors flex items-center justify-center text-[#2C2C2C] shadow-sm active:scale-95 border border-white/50 backdrop-blur-sm"
+                  >
+                    <Share size={20} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
+        {filteredItems.length === 0 && (
+          <div className="text-center py-12 text-[#8E8E8E]">
+            No works found in this category.
+          </div>
+        )}
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-28 left-0 right-0 max-w-md mx-auto px-6 pointer-events-none z-40 flex justify-end">
+        <button 
+          onClick={() => setIsNewPortfolioOpen(true)}
+          className="w-14 h-14 rounded-full bg-[#D4AF37] text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pointer-events-auto"
+        >
+          <Plus size={24} />
+        </button>
+      </div>
+
+      {/* New Portfolio Modal */}
+      <AnimatePresence>
+        {isNewPortfolioOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-0 z-50 bg-[#FAF9F6] flex flex-col"
+          >
+            <div className="w-full max-w-md mx-auto flex flex-col h-full bg-[#FAF9F6] relative">
+              <header className="px-6 py-5 flex items-center bg-[#FAF9F6] z-10">
+                <button onClick={() => setIsNewPortfolioOpen(false)} className="p-1 -ml-2 text-[#2C2C2C] hover:text-[#D4AF37] transition-colors absolute left-6">
+                  <ChevronLeft size={24} strokeWidth={1.5} />
+                </button>
+                <h1 className="flex-1 text-center font-serif text-2xl text-[#2C2C2C]">New Portfolio</h1>
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar">
+                {/* Photo Upload Area */}
+                <div className="w-full h-40 rounded-[24px] border-2 border-dashed border-[#E5E5E5] flex flex-col items-center justify-center gap-4 bg-white/50 hover:bg-white transition-colors cursor-pointer mb-8">
+                  <div className="w-12 h-12 rounded-full border border-[#2C2C2C] flex items-center justify-center text-[#2C2C2C]">
+                    <ImageIcon size={20} strokeWidth={1.5} />
+                    <Plus size={12} strokeWidth={2} className="absolute ml-5 -mt-5 bg-white rounded-full p-0.5" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-[#2C2C2C] mb-1">Add Main Photo</p>
+                    <p className="text-[11px] text-[#8E8E8E]">High resolution, vertical preferred</p>
+                  </div>
+                </div>
+
+                {/* Form Fields */}
+                <div className="space-y-8">
+                  <div>
+                    <label className="block text-sm text-[#2C2C2C] mb-3">Work Title</label>
+                    <input
+                      type="text"
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="E.g., Summer Garden Romance"
+                      className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-[#2C2C2C] mb-3">Category</label>
+                    <div className="flex flex-wrap gap-3">
+                      {modalCategories.map((cat) => (
+                        <button
+                          key={cat}
+                          onClick={() => setNewCategoryModal(cat)}
+                          className={cn(
+                            "px-5 py-2.5 rounded-full text-sm transition-all",
+                            newCategoryModal === cat
+                              ? "bg-[#D4AF37] text-white shadow-md font-medium"
+                              : "bg-[#F5F5F5] text-[#2C2C2C] hover:bg-gray-200"
+                          )}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 text-sm text-[#2C2C2C] mb-3">
+                      <span className="text-xs">🔗</span> External Link (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={newLink}
+                      onChange={(e) => setNewLink(e.target.value)}
+                      placeholder="Vimeo or YouTube URL"
+                      className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Fixed Area */}
+              <div className="p-6 bg-white border-t border-gray-100">
+                <button
+                  onClick={handleCreatePortfolio}
+                  className="w-full bg-[#D4AF37] text-white py-4 rounded-full text-[13px] font-medium tracking-widest uppercase shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  Confirm & Create
+                  <CheckCircle2 size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-32 left-1/2 -translate-x-1/2 bg-[#2C2C2C] text-white px-6 py-3 rounded-full text-sm font-medium shadow-xl z-50 whitespace-nowrap"
+          >
+            {toastMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -2567,7 +2910,8 @@ export default function App() {
               <Route path="/crm" element={<AuthGuard><CRMScreen /></AuthGuard>} />
               <Route path="/crm/clients" element={<AuthGuard><ClientListScreen /></AuthGuard>} />
               <Route path="/crm/client/:id" element={<AuthGuard><ClientArchiveScreen /></AuthGuard>} />
-              <Route path="/crm/profile" element={<AuthGuard><ArtistProfileScreen /></AuthGuard>} />
+              <Route path="/crm/monthly-tracking" element={<AuthGuard><MonthlyTrackingScreen Header={Header} /></AuthGuard>} />
+              <Route path="/crm/gallery" element={<AuthGuard><GalleryScreen /></AuthGuard>} />
               <Route path="/crm/appointment/:id" element={<AuthGuard><CRMAppointmentDetailScreen Header={Header} /></AuthGuard>} />
               <Route path="/settings" element={<AuthGuard><SettingsScreen Header={Header} /></AuthGuard>} />
 
