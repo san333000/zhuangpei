@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CHECKLIST, MOCK_CLIENTS, MOCK_APPOINTMENTS, MOCK_ORDERS } from './constants';
-import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen, MonthlyTrackingScreen } from './newScreens';
+import { PublicArtistProfileScreen, BookingScreen, ChatScreen, OrderDetailsScreen, SavedArtistsScreen, SettingsScreen, CRMAppointmentDetailScreen, MonthlyTrackingScreen, PortfolioLookDetailsScreen } from './newScreens';
 import { AIMatchEntryScreen, AIMatchFlowScreen, AIMatchLoadingScreen, MatchResultScreen } from './AIMatch';
 import { generateServiceRecommendation } from './services/geminiService';
 import MDEditor from '@uiw/react-md-editor';
@@ -2065,6 +2065,7 @@ const ClientListScreen = () => {
 };
 
 const GalleryScreen = () => {
+  const navigate = useNavigate();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isNewPortfolioOpen, setIsNewPortfolioOpen] = useState(false);
@@ -2167,7 +2168,8 @@ const GalleryScreen = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               layout
-              className="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden luxury-shadow group"
+              onClick={() => navigate(`/crm/gallery/${item.id}`, { state: { look: item } })}
+              className="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden luxury-shadow group cursor-pointer"
             >
               <img 
                 src={item.image} 
@@ -2912,6 +2914,7 @@ export default function App() {
               <Route path="/crm/client/:id" element={<AuthGuard><ClientArchiveScreen /></AuthGuard>} />
               <Route path="/crm/monthly-tracking" element={<AuthGuard><MonthlyTrackingScreen Header={Header} /></AuthGuard>} />
               <Route path="/crm/gallery" element={<AuthGuard><GalleryScreen /></AuthGuard>} />
+              <Route path="/crm/gallery/:id" element={<AuthGuard><PortfolioLookDetailsScreen /></AuthGuard>} />
               <Route path="/crm/appointment/:id" element={<AuthGuard><CRMAppointmentDetailScreen Header={Header} /></AuthGuard>} />
               <Route path="/settings" element={<AuthGuard><SettingsScreen Header={Header} /></AuthGuard>} />
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2, GripVertical, Trash2, Edit2 } from 'lucide-react';
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2, GripVertical, Trash2, Edit2, Share2 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
 import Markdown from 'react-markdown';
@@ -931,43 +931,203 @@ export const SavedArtistsScreen = ({ Header }: any) => {
 
 export const SettingsScreen = ({ Header }: any) => {
   const navigate = useNavigate();
+  const [artist, setArtist] = useState(MOCK_MUAS[1]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(artist.name);
+  const [editBio, setEditBio] = useState(artist.bio);
+  
+  // Custom states for the new design
+  const [editTagline, setEditTagline] = useState('Principal Artist');
+  const [editSlogan, setEditSlogan] = useState('Master of Radiant Bridal Glow');
+  const [editTags, setEditTags] = useState(['8YRS EXP', 'LUXURY BRANDS', 'SKIN SPECIALIST']);
+  const [editAvatar, setEditAvatar] = useState(artist.avatar);
+
+  const displayTagline = editTagline || 'Principal Artist';
+  const displaySlogan = editSlogan || 'Master of Radiant Bridal Glow';
+
+  const handleSave = () => {
+    setArtist({ ...artist, name: editName, bio: editBio, avatar: editAvatar });
+    setIsEditing(false);
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pb-32 min-h-screen bg-[#FAF9F6]">
       <Header title="Personal Center" />
-      
-      {/* Profile Section Added from Portfolio */}
-      <div className="px-6 py-8 flex flex-col items-center text-center border-b border-gray-100">
-        <div className="relative w-28 h-28 rounded-full bg-gray-200 mb-4 overflow-hidden luxury-shadow">
-          <img src={MOCK_MUAS[1].avatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+      <div className="w-full max-w-md mx-auto relative">
+        {/* Immersive Top Image */}
+        <div className="w-full px-6 mt-2 relative">
+          <div className="w-full h-[55vh] rounded-[32px] overflow-hidden luxury-shadow mb-8 relative">
+            <img 
+              src={artist.avatar} 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+              alt={artist.name}
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          </div>
         </div>
-        <h2 className="font-serif text-2xl text-[#2C2C2C] mb-1">{MOCK_MUAS[1].name}</h2>
-        <p className="text-sm text-[#8E8E8E]">{MOCK_MUAS[1].title} · {MOCK_MUAS[1].city}</p>
+        
+        <div className="px-6 relative">
+          <div className="absolute right-6 top-0 z-10">
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md shadow-sm border border-gray-100 flex items-center justify-center text-[#2C2C2C] hover:bg-white transition-all active:scale-95"
+            >
+              <Edit2 size={18} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Top Tagline */}
+          <p className="text-[10px] text-[#D4AF37] font-medium tracking-[0.2em] uppercase mb-2">
+            {displayTagline}
+          </p>
+          
+          {/* Large Name */}
+          <h1 className="font-serif text-5xl text-[#2C2C2C] mb-2 tracking-tight pr-12">
+            {artist.name}
+          </h1>
+          
+          {/* Catchy Slogan */}
+          <p className="text-lg text-[#6A5ACD] font-serif italic mb-6">
+            {displaySlogan}
+          </p>
+          
+          {/* Tags Row */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            {editTags.map((tag, idx) => (
+              <span key={idx} className="px-4 py-1.5 bg-[#F4E8C8]/30 border border-[#F4E8C8] text-[#8E8E8E] font-medium text-[9px] uppercase tracking-widest rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+          
+          {/* About Me Paragraph */}
+          <p className="text-[15px] font-sans text-[#8E8E8E] leading-relaxed mb-10">
+            {artist.bio}
+          </p>
+        </div>
+        
+        <div className="px-6 space-y-4">
+          {['Notifications', 'Privacy', 'Payment Methods', 'Help & Support'].map(item => (
+            <button key={item} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group active:scale-95 transition-all">
+              <span className="font-medium text-[#2C2C2C]">{item}</span>
+              <ChevronLeft size={20} className="text-[#8E8E8E] rotate-180" />
+            </button>
+          ))}
+          
+          <button 
+            onClick={() => {
+              localStorage.removeItem('isLoggedIn');
+              navigate('/login');
+            }}
+            className="w-full mt-8 bg-red-50 text-red-500 rounded-[24px] p-5 flex items-center justify-center gap-2 luxury-shadow group active:scale-95 transition-all"
+          >
+            <LogOut size={18} />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
       </div>
 
-      <div className="px-6 py-6">
-        <h3 className="font-serif text-lg text-[#2C2C2C] mb-3">About Me</h3>
-        <p className="text-sm text-[#8E8E8E] leading-relaxed bg-white p-5 rounded-[24px] luxury-shadow border border-gray-50">{MOCK_MUAS[1].bio}</p>
-      </div>
-      
-      <div className="px-6 py-2 space-y-4">
-        {['Notifications', 'Privacy', 'Payment Methods', 'Help & Support'].map(item => (
-          <button key={item} className="w-full bg-white rounded-[24px] p-5 flex items-center justify-between luxury-shadow group">
-            <span className="font-medium text-[#2C2C2C]">{item}</span>
-            <ChevronLeft size={20} className="text-[#8E8E8E] rotate-180" />
-          </button>
-        ))}
-        
-        <button 
-          onClick={() => {
-            localStorage.removeItem('isLoggedIn');
-            navigate('/login');
-          }}
-          className="w-full mt-8 bg-red-50 text-red-500 rounded-[24px] p-5 flex items-center justify-center gap-2 luxury-shadow group active:scale-95 transition-all"
-        >
-          <LogOut size={18} />
-          <span className="font-medium">Logout</span>
-        </button>
-      </div>
+      {/* Edit Profile Modal */}
+      <AnimatePresence>
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 right-0 z-[60] flex justify-center pointer-events-none"
+          >
+            <div className="w-full max-w-md flex flex-col h-full bg-[#FAF9F6] relative pointer-events-auto shadow-2xl">
+              <header className="px-6 py-5 flex items-center justify-between bg-[#FAF9F6] z-10 shrink-0">
+                <button onClick={() => setIsEditing(false)} className="p-2 -ml-2 text-[#2C2C2C] hover:text-[#D4AF37] transition-colors rounded-full hover:bg-gray-100/50">
+                  <X size={24} strokeWidth={1.5} />
+                </button>
+                <h1 className="font-serif text-xl text-[#2C2C2C]">Edit Profile</h1>
+                <button onClick={handleSave} className="text-sm font-medium text-[#D4AF37] uppercase tracking-widest px-2 py-1">
+                  Save
+                </button>
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar space-y-8">
+                {/* Avatar Edit Area */}
+                <div className="flex flex-col items-center py-4">
+                  <button
+                    onClick={() => {
+                      const newUrl = window.prompt("Enter new image URL to replace photo:", editAvatar);
+                      if (newUrl) setEditAvatar(newUrl);
+                    }}
+                    className="relative group w-32 h-40 rounded-[24px] overflow-hidden luxury-shadow"
+                  >
+                    <img src={editAvatar} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ImageIcon className="text-white mb-2" size={24} />
+                      <span className="text-white text-[10px] font-medium uppercase tracking-widest">Replace</span>
+                    </div>
+                  </button>
+                  <p className="text-[11px] text-[#8E8E8E] mt-4 uppercase tracking-widest font-medium">Tap photo to change</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-3">Tagline</label>
+                  <input
+                    type="text"
+                    value={editTagline}
+                    onChange={(e) => setEditTagline(e.target.value)}
+                    placeholder="e.g. Principal Artist"
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-3">Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Your Name"
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-3">Slogan</label>
+                  <input
+                    type="text"
+                    value={editSlogan}
+                    onChange={(e) => setEditSlogan(e.target.value)}
+                    placeholder="e.g. Master of Radiant Bridal Glow"
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-3">Tags (comma separated)</label>
+                  <input
+                    type="text"
+                    value={editTags.join(', ')}
+                    onChange={(e) => setEditTags(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                    placeholder="e.g. 8YRS EXP, LUXURY BRANDS"
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-3">About Me</label>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Write a short biography..."
+                    rows={4}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all resize-none"
+                  />
+                </div>
+                <div className="h-8" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1185,6 +1345,232 @@ export const MonthlyTrackingScreen = ({ Header }: any) => {
           )}
         </AnimatePresence>
       </div>
+    </motion.div>
+  );
+};
+
+export const PortfolioLookDetailsScreen = () => {
+  const navigate = useNavigate();
+  const { state } = useLocation();
+  const initialLook = state?.look || {
+    id: 1,
+    image: 'https://images.unsplash.com/photo-1522673607200-164883eecd4c?w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1522673607200-164883eecd4c?w=800&q=80',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&q=80'
+    ],
+    title: 'Ethereal Glow',
+    category: 'BRIDAL GLAM',
+    date: 'OCT 12, 2023'
+  };
+
+  const images = initialLook.images && initialLook.images.length > 0 ? initialLook.images : [initialLook.image];
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState(initialLook.title);
+  const [category, setCategory] = useState(initialLook.category || 'BRIDAL GLAM');
+  const [date, setDate] = useState(initialLook.date || 'OCT 12, 2023');
+  const [clientName, setClientName] = useState('Sarah Jenkins');
+  const [clientPhone, setClientPhone] = useState('+1 234 567 890');
+  const [service, setService] = useState('Full Bridal Day Service');
+  const [price, setPrice] = useState('$599');
+  const [notes, setNotes] = useState('Trial makeup was completed last week. The client requested a natural skin focus with a subtle golden eye glow. Used high-end Armani and Tom Ford products. Full wedding day look completed successfully.');
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pb-32 min-h-screen bg-[#FAF9F6] relative z-50">
+      <header className="sticky top-0 bg-[#FAF9F6]/90 backdrop-blur-md z-40 px-6 py-5 flex items-center justify-between max-w-md mx-auto">
+        <button onClick={() => navigate(-1)} className="p-1 -ml-2 text-[#2C2C2C] hover:text-[#D4AF37] transition-colors">
+          <ChevronLeft size={24} strokeWidth={1.5} />
+        </button>
+        <h1 className="text-xl font-serif text-[#2C2C2C] tracking-wide">Look Details</h1>
+        <div className="w-8" />
+      </header>
+
+      <div className="max-w-md mx-auto w-full px-6 flex flex-col space-y-8">
+        {/* Upper Section: Immersive Media Showcase */}
+        <div className="w-full relative rounded-[32px] overflow-hidden luxury-shadow bg-white aspect-[4/5]">
+          {images.length === 1 ? (
+            <img src={images[0]} className="w-full h-full object-cover" alt={title} />
+          ) : (
+            <div className="w-full h-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar">
+              {images.map((img: string, i: number) => (
+                <img key={i} src={img} className="w-full h-full object-cover shrink-0 snap-center" alt={`${title} ${i + 1}`} />
+              ))}
+            </div>
+          )}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
+              {images.map((_: any, i: number) => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm" />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Lower Section: Modular Information Panel */}
+        <div className="space-y-6">
+          {/* Field 1: Look Title */}
+          <div className="border-b border-gray-200 pb-4">
+            <p className="text-[10px] text-[#8E8E8E] font-medium tracking-[0.2em] uppercase mb-1">Look Title</p>
+            <h2 className="font-serif text-3xl text-[#2C2C2C]">{title}</h2>
+          </div>
+
+          {/* Field 2: Date & Category */}
+          <div className="flex gap-2 border-b border-gray-200 pb-4">
+            <span className="px-4 py-1.5 bg-[#F5F5F0] text-[#8E8E8E] font-medium text-[9px] uppercase tracking-widest rounded-full">
+              {date}
+            </span>
+            <span className="px-4 py-1.5 bg-[#F5F5F0] text-[#8E8E8E] font-medium text-[9px] uppercase tracking-widest rounded-full">
+              {category}
+            </span>
+          </div>
+
+          {/* Field 3: Client Information */}
+          <div className="bg-[#F5F5F0] rounded-[24px] p-5 luxury-shadow">
+            <p className="text-[10px] text-[#8E8E8E] font-medium tracking-[0.2em] uppercase mb-2">Client</p>
+            <h3 className="font-serif text-lg text-[#2C2C2C] mb-1">{clientName}</h3>
+            <p className="text-[13px] text-[#8E8E8E] font-sans">{clientPhone}</p>
+          </div>
+
+          {/* Field 4: Service & Price */}
+          <div className="bg-[#F5F5F0] rounded-[24px] p-5 luxury-shadow">
+            <p className="text-[10px] text-[#8E8E8E] font-medium tracking-[0.2em] uppercase mb-2">Service</p>
+            <h3 className="font-serif text-lg text-[#2C2C2C] mb-1">{service}</h3>
+            <p className="text-lg text-[#2C2C2C] font-sans font-medium">{price}</p>
+          </div>
+
+          {/* Field 5: Case Notes */}
+          <div className="bg-[#F5F5F0] rounded-[24px] p-5 luxury-shadow">
+            <h3 className="font-serif text-lg text-[#2C2C2C] mb-3">Case Notes</h3>
+            <p className="text-[14px] leading-relaxed text-[#5C5C5C] font-sans">
+              {notes}
+            </p>
+          </div>
+        </div>
+        
+        {/* Spacer for floating buttons */}
+        <div className="h-16" />
+      </div>
+
+      {/* Floating Actions */}
+      <div className="fixed bottom-8 left-0 right-0 max-w-md mx-auto px-6 pointer-events-none z-40 flex justify-between items-end">
+        <button onClick={() => setIsEditing(true)} className="w-14 h-14 rounded-full bg-white text-[#2C2C2C] flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pointer-events-auto border border-gray-100">
+          <Edit2 size={24} strokeWidth={1.5} />
+        </button>
+        <button className="w-14 h-14 rounded-full bg-[#D4AF37] text-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform pointer-events-auto">
+          <Share2 size={24} strokeWidth={1.5} />
+        </button>
+      </div>
+
+      {/* Edit Details Modal */}
+      <AnimatePresence>
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, y: "100%" }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed inset-y-0 left-0 right-0 z-[60] flex justify-center pointer-events-none"
+          >
+            <div className="w-full max-w-md flex flex-col h-full bg-[#FAF9F6] relative pointer-events-auto shadow-2xl">
+              <header className="px-6 py-5 flex items-center justify-between bg-[#FAF9F6] z-10 shrink-0">
+                <button onClick={() => setIsEditing(false)} className="p-2 -ml-2 text-[#2C2C2C] hover:text-[#D4AF37] transition-colors rounded-full hover:bg-gray-100/50">
+                  <X size={24} strokeWidth={1.5} />
+                </button>
+                <h1 className="font-serif text-xl text-[#2C2C2C]">Edit Details</h1>
+                <button onClick={() => setIsEditing(false)} className="text-sm font-medium text-[#D4AF37] uppercase tracking-widest px-2 py-1">
+                  Save
+                </button>
+              </header>
+
+              <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Look Title</label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+                
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Date</label>
+                    <input
+                      type="text"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Category</label>
+                    <input
+                      type="text"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Client Name</label>
+                  <input
+                    type="text"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Client Phone</label>
+                  <input
+                    type="text"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Service Provided</label>
+                  <input
+                    type="text"
+                    value={service}
+                    onChange={(e) => setService(e.target.value)}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Price</label>
+                  <input
+                    type="text"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Case Notes</label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={5}
+                    className="w-full bg-[#F5F5F5] border border-transparent rounded-[16px] p-4 text-[15px] text-[#2C2C2C] placeholder-[#A0A0A0] focus:outline-none focus:bg-white focus:border-[#D4AF37] transition-all resize-none"
+                  />
+                </div>
+                
+                <div className="h-8" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
