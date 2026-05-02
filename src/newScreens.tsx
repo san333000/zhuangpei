@@ -1364,7 +1364,7 @@ export const PortfolioLookDetailsScreen = () => {
     date: 'OCT 12, 2023'
   };
 
-  const images = initialLook.images && initialLook.images.length > 0 ? initialLook.images : [initialLook.image];
+  const [images, setImages] = useState<string[]>(initialLook.images && initialLook.images.length > 0 ? initialLook.images : [initialLook.image]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(initialLook.title);
@@ -1375,6 +1375,25 @@ export const PortfolioLookDetailsScreen = () => {
   const [service, setService] = useState('Full Bridal Day Service');
   const [price, setPrice] = useState('$599');
   const [notes, setNotes] = useState('Trial makeup was completed last week. The client requested a natural skin focus with a subtle golden eye glow. Used high-end Armani and Tom Ford products. Full wedding day look completed successfully.');
+  
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
+
+  const handleDeleteImage = () => {
+    if (imageToDelete !== null) {
+      setImages(images.filter((_, i) => i !== imageToDelete));
+      setImageToDelete(null);
+    }
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const scrollPosition = e.currentTarget.scrollLeft;
+    const containerWidth = e.currentTarget.clientWidth;
+    const newIndex = Math.round(scrollPosition / containerWidth);
+    if (newIndex !== activeImageIndex) {
+      setActiveImageIndex(newIndex);
+    }
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pb-32 min-h-screen bg-[#FAF9F6] relative z-50">
@@ -1390,18 +1409,27 @@ export const PortfolioLookDetailsScreen = () => {
         {/* Upper Section: Immersive Media Showcase */}
         <div className="w-full relative rounded-[32px] overflow-hidden luxury-shadow bg-white aspect-[4/5]">
           {images.length === 1 ? (
-            <img src={images[0]} className="w-full h-full object-cover" alt={title} />
+            <img src={images[0]} loading="lazy" className="w-full h-full object-cover" alt={title} />
           ) : (
-            <div className="w-full h-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar">
+            <div 
+              className="w-full h-full flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+              onScroll={handleScroll}
+            >
               {images.map((img: string, i: number) => (
-                <img key={i} src={img} className="w-full h-full object-cover shrink-0 snap-center" alt={`${title} ${i + 1}`} />
+                <img key={i} src={img} loading="lazy" className="w-full h-full object-cover shrink-0 snap-center" alt={`${title} ${i + 1}`} />
               ))}
             </div>
           )}
           {images.length > 1 && (
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
               {images.map((_: any, i: number) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm" />
+                <div 
+                  key={i} 
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300",
+                    i === activeImageIndex ? "bg-white w-3" : "bg-white/60"
+                  )} 
+                />
               ))}
             </div>
           )}
@@ -1484,6 +1512,43 @@ export const PortfolioLookDetailsScreen = () => {
               </header>
 
               <div className="flex-1 overflow-y-auto px-6 py-4 no-scrollbar space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Images</label>
+                  <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 px-1">
+                    <Reorder.Group 
+                      axis="x"
+                      values={images}
+                      onReorder={setImages}
+                      className="flex gap-4"
+                    >
+                      <AnimatePresence>
+                        {images.map((img, i) => (
+                          <Reorder.Item 
+                            key={img}
+                            value={img}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="relative w-24 h-24 rounded-xl flex-shrink-0 overflow-hidden cursor-grab active:cursor-grabbing"
+                          >
+                            <img src={img} className="w-full h-full object-cover pointer-events-none" alt={`Look ${i}`} />
+                            <button 
+                              onClick={() => setImageToDelete(i)}
+                              className="absolute top-1 right-1 w-6 h-6 bg-red-500/80 backdrop-blur-md text-white rounded-full flex items-center justify-center shadow hover:bg-red-600 transition-colors pointer-events-auto"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </Reorder.Item>
+                        ))}
+                      </AnimatePresence>
+                    </Reorder.Group>
+                    <button className="w-24 h-24 rounded-xl bg-[#F5F5F0] flex flex-col items-center justify-center text-[#8E8E8E] flex-shrink-0 hover:bg-[#EBEBEB] transition-colors border-2 border-dashed border-gray-200">
+                      <Plus size={20} className="mb-1" />
+                      <span className="text-[10px] uppercase tracking-widest font-medium">Add</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-[#2C2C2C] mb-2">Look Title</label>
                   <input
@@ -1568,6 +1633,45 @@ export const PortfolioLookDetailsScreen = () => {
                 <div className="h-8" />
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {imageToDelete !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-[32px] p-8 w-full max-w-sm luxury-shadow"
+            >
+              <h3 className="font-serif text-2xl text-[#2C2C2C] mb-2 text-center">Delete Image</h3>
+              <p className="text-sm text-[#8E8E8E] text-center mb-8">
+                Are you sure you want to remove this image from the look? This action cannot be undone.
+              </p>
+              
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setImageToDelete(null)}
+                  className="flex-1 py-4 px-6 rounded-full border border-gray-200 text-[#2C2C2C] font-medium text-[11px] uppercase tracking-widest active:scale-95 transition-all text-center"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDeleteImage}
+                  className="flex-1 py-4 px-6 rounded-full bg-red-500 text-white font-medium text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-red-500/20 text-center"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
