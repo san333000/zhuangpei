@@ -2159,17 +2159,17 @@ const GalleryScreen = () => {
         </div>
       </header>
 
-      <div className="px-6 py-2 space-y-8 max-w-md mx-auto">
+      <div className="px-4 py-2 grid grid-cols-2 gap-3 max-w-md mx-auto">
         <AnimatePresence>
           {filteredItems.map(item => (
             <motion.div 
               key={item.id} 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
               layout
               onClick={() => navigate(`/crm/gallery/${item.id}`, { state: { look: item } })}
-              className="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden luxury-shadow group cursor-pointer"
+              className="relative w-full aspect-[4/5] rounded-[24px] overflow-hidden luxury-shadow group cursor-pointer"
             >
               <img 
                 src={item.image} 
@@ -2179,17 +2179,20 @@ const GalleryScreen = () => {
               />
               
               {/* Glassmorphism Info Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-[24px] p-5 flex items-center justify-between shadow-lg">
-                  <div className="flex flex-col gap-1.5">
-                    <h3 className="font-serif text-xl text-[#2C2C2C] font-semibold">{item.title}</h3>
-                    <span className="text-[9px] text-[#2C2C2C]/80 uppercase tracking-[0.2em] font-medium">{item.category}</span>
+              <div className="absolute bottom-0 left-0 right-0 p-2">
+                <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-[16px] p-3 flex flex-col gap-2 shadow-lg">
+                  <div className="flex flex-col">
+                    <h3 className="font-serif text-[13px] leading-tight text-[#2C2C2C] font-semibold line-clamp-1">{item.title}</h3>
+                    <span className="text-[8px] text-[#2C2C2C]/80 uppercase tracking-widest font-medium mt-0.5">{item.category}</span>
                   </div>
                   <button 
-                    onClick={() => handleWechatShare(item.title)}
-                    className="w-12 h-12 rounded-full bg-white/40 hover:bg-white/60 transition-colors flex items-center justify-center text-[#2C2C2C] shadow-sm active:scale-95 border border-white/50 backdrop-blur-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWechatShare(item.title);
+                    }}
+                    className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-white/40 hover:bg-white/60 transition-colors flex items-center justify-center text-[#2C2C2C] shadow-sm active:scale-95 border border-white/50 backdrop-blur-sm"
                   >
-                    <Share size={20} strokeWidth={1.5} />
+                    <Share size={14} strokeWidth={1.5} />
                   </button>
                 </div>
               </div>

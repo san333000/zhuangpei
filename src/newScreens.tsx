@@ -1,10 +1,192 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'motion/react';
 import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
 import { ChevronLeft, Clock, MapPin, Heart, Settings, LogOut, Search, Plus, Calendar, CheckCircle2, X, Star, Sparkles, User, Phone, ImageIcon, PlayCircle, Video, Undo2, Redo2, GripVertical, Trash2, Edit2, Share2 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { MOCK_MUAS, MOCK_CLIENTS, MOCK_ORDERS } from './constants';
 import Markdown from 'react-markdown';
+
+const DraggableServiceItem = ({ service, idx, isEditing, editServices, setEditServices, navigate, artist }: any) => {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item 
+      value={service} 
+      dragListener={false}
+      dragControls={dragControls}
+      className={cn(
+        "bg-white rounded-[24px] p-6 border border-gray-50 relative group",
+        isEditing ? "luxury-shadow-sm border-gray-200" : "luxury-shadow"
+      )}
+    >
+      {isEditing && (
+        <button 
+          onClick={() => {
+            setEditServices(editServices.filter((s: any) => s.id !== service.id));
+          }}
+          className="absolute top-4 right-4 p-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors z-10"
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
+      
+      {isEditing ? (
+        <div className="space-y-3 pr-6">
+          <div className="flex items-center gap-2 mb-2">
+            <div 
+              onPointerDown={(e) => dragControls.start(e)}
+              className="text-gray-300 cursor-grab active:cursor-grabbing"
+              style={{ touchAction: 'none' }}
+            >
+              <GripVertical size={20} />
+            </div>
+            <input 
+              type="text" 
+              value={service.name}
+              onChange={(e) => {
+                const newServices = [...editServices];
+                newServices[idx].name = e.target.value;
+                setEditServices(newServices);
+              }}
+              className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+              placeholder="Service Name"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="w-1/3 flex flex-col gap-1">
+              <select
+                value={service.category || ''}
+                onChange={(e) => {
+                  const newServices = [...editServices];
+                  newServices[idx].category = e.target.value;
+                  setEditServices(newServices);
+                }}
+                className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+              >
+                <option value="">Category...</option>
+                <option value="Bridal">Bridal</option>
+                <option value="Event">Event</option>
+                <option value="Daily Makeup">Daily Makeup</option>
+                <option value="Photoshoot">Photoshoot</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="w-1/3 flex flex-col gap-1">
+              <input 
+                type="number" 
+                value={service.price}
+                onChange={(e) => {
+                  const newServices = [...editServices];
+                  newServices[idx].price = Number(e.target.value);
+                  setEditServices(newServices);
+                }}
+                className="font-serif text-[#D4AF37] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+                placeholder="Price"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div className="w-1/3 flex flex-col gap-1">
+              <select
+                value={service.duration || ''}
+                onChange={(e) => {
+                  const newServices = [...editServices];
+                  newServices[idx].duration = e.target.value;
+                  setEditServices(newServices);
+                }}
+                className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
+              >
+                <option value="">Duration...</option>
+                <option value="30 mins">30 mins</option>
+                <option value="45 mins">45 mins</option>
+                <option value="1 hour">1 hour</option>
+                <option value="1.5 hours">1.5 hours</option>
+                <option value="2 hours">2 hours</option>
+                <option value="2.5 hours">2.5 hours</option>
+                <option value="3 hours">3 hours</option>
+                <option value="4 hours">4 hours</option>
+                <option value="5+ hours">5+ hours</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <textarea
+              value={service.description}
+              onChange={(e) => {
+                const newServices = [...editServices];
+                newServices[idx].description = e.target.value;
+                setEditServices(newServices);
+              }}
+              className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[80px]"
+              placeholder="Description (Markdown supported)"
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="flex justify-between items-start mb-3">
+            <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
+            <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
+          </div>
+          <div className="text-sm text-[#8E8E8E] mb-4 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+            <Markdown>{service.description}</Markdown>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
+                <Clock size={12} />
+                <span>{service.duration}</span>
+              </div>
+              {service.category && (
+                <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
+                  {service.category}
+                </div>
+              )}
+              {service.videoUrl && (
+                <a 
+                  href={service.videoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md"
+                >
+                  <PlayCircle size={12} /> Watch Video
+                </a>
+              )}
+            </div>
+            <button onClick={() => navigate(`/book/${artist.id}`)} className="px-4 py-2 bg-[#F4E8C8]/30 text-[#D4AF37] rounded-full text-xs font-medium tracking-widest uppercase">
+              Select
+            </button>
+          </div>
+
+          {/* Tooltip */}
+          {(service.materialsUsed || service.stylingNotes) && (
+            <div className="absolute left-0 right-0 -top-2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
+              <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
+                {service.materialsUsed && (
+                  <div className="mb-2">
+                    <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1">Materials:</span>
+                    <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                      <Markdown>{service.materialsUsed}</Markdown>
+                    </div>
+                  </div>
+                )}
+                {service.stylingNotes && (
+                  <div>
+                    <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Styling & Suitability:</span>
+                    <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
+                      <Markdown>{service.stylingNotes}</Markdown>
+                    </div>
+                  </div>
+                )}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </Reorder.Item>
+  );
+};
 
 export const PublicArtistProfileScreen = ({ Header }: any) => {
   const { id } = useParams();
@@ -238,177 +420,16 @@ export const PublicArtistProfileScreen = ({ Header }: any) => {
             className="space-y-4"
           >
             {(isEditing ? editServices : (selectedCategory === 'All' ? artist.services : artist.services.filter(s => s.category === selectedCategory))).map((service, idx) => (
-              <Reorder.Item 
-                key={service.id} 
-                value={service} 
-                dragListener={isEditing}
-                className={cn(
-                  "bg-white rounded-[24px] p-6 border border-gray-50 relative group",
-                  isEditing ? "luxury-shadow-sm border-gray-200" : "luxury-shadow"
-                )}
-              >
-                {isEditing && (
-                  <button 
-                    onClick={() => {
-                      setEditServices(editServices.filter(s => s.id !== service.id));
-                    }}
-                    className="absolute top-4 right-4 p-2 text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 rounded-full transition-colors z-10"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-                
-                {isEditing ? (
-                  <div className="space-y-3 pr-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-gray-300 cursor-grab active:cursor-grabbing">
-                        <GripVertical size={20} />
-                      </div>
-                      <input 
-                        type="text" 
-                        value={service.name}
-                        onChange={(e) => {
-                          const newServices = [...editServices];
-                          newServices[idx].name = e.target.value;
-                          setEditServices(newServices);
-                        }}
-                        className="font-medium text-[#2C2C2C] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                        placeholder="Service Name"
-                      />
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="w-1/3 flex flex-col gap-1">
-                        <select
-                          value={service.category || ''}
-                          onChange={(e) => {
-                            const newServices = [...editServices];
-                            newServices[idx].category = e.target.value;
-                            setEditServices(newServices);
-                          }}
-                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                        >
-                          <option value="">Category...</option>
-                          <option value="Bridal">Bridal</option>
-                          <option value="Event">Event</option>
-                          <option value="Daily Makeup">Daily Makeup</option>
-                          <option value="Photoshoot">Photoshoot</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div className="w-1/3 flex flex-col gap-1">
-                        <input 
-                          type="number" 
-                          value={service.price}
-                          onChange={(e) => {
-                            const newServices = [...editServices];
-                            newServices[idx].price = Number(e.target.value);
-                            setEditServices(newServices);
-                          }}
-                          className="font-serif text-[#D4AF37] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                          placeholder="Price"
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
-                      <div className="w-1/3 flex flex-col gap-1">
-                        <select
-                          value={service.duration || ''}
-                          onChange={(e) => {
-                            const newServices = [...editServices];
-                            newServices[idx].duration = e.target.value;
-                            setEditServices(newServices);
-                          }}
-                          className="text-xs text-[#8E8E8E] w-full bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37]"
-                        >
-                          <option value="">Duration...</option>
-                          <option value="30 mins">30 mins</option>
-                          <option value="45 mins">45 mins</option>
-                          <option value="1 hour">1 hour</option>
-                          <option value="1.5 hours">1.5 hours</option>
-                          <option value="2 hours">2 hours</option>
-                          <option value="2.5 hours">2.5 hours</option>
-                          <option value="3 hours">3 hours</option>
-                          <option value="4 hours">4 hours</option>
-                          <option value="5+ hours">5+ hours</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <textarea
-                        value={service.description}
-                        onChange={(e) => {
-                          const newServices = [...editServices];
-                          newServices[idx].description = e.target.value;
-                          setEditServices(newServices);
-                        }}
-                        className="w-full text-xs text-[#2C2C2C] bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:border-[#D4AF37] min-h-[80px]"
-                        placeholder="Description (Markdown supported)"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-start mb-3">
-                      <h4 className="font-medium text-[#2C2C2C] text-lg">{service.name}</h4>
-                      <span className="font-serif text-xl text-[#D4AF37]">${service.price}</span>
-                    </div>
-                    <div className="text-sm text-[#8E8E8E] mb-4 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                      <Markdown>{service.description}</Markdown>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-[#8E8E8E] font-medium">
-                          <Clock size={12} />
-                          <span>{service.duration}</span>
-                        </div>
-                        {service.category && (
-                          <div className="inline-flex items-center gap-1 text-[10px] text-[#D4AF37] uppercase tracking-widest bg-[#F4E8C8]/30 px-2 py-1 rounded-md">
-                            {service.category}
-                          </div>
-                        )}
-                        {service.videoUrl && (
-                          <a 
-                            href={service.videoUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] text-blue-500 uppercase tracking-widest bg-blue-50 hover:bg-blue-100 transition-colors px-2 py-1 rounded-md"
-                          >
-                            <PlayCircle size={12} /> Watch Video
-                          </a>
-                        )}
-                      </div>
-                      <button onClick={() => navigate(`/book/${artist.id}`)} className="px-4 py-2 bg-[#F4E8C8]/30 text-[#D4AF37] rounded-full text-xs font-medium tracking-widest uppercase">
-                        Select
-                      </button>
-                    </div>
-
-                    {/* Tooltip */}
-                    {(service.materialsUsed || service.stylingNotes) && (
-                      <div className="absolute left-0 right-0 -top-2 -translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-20">
-                        <div className="bg-[#2C2C2C] text-white p-4 rounded-2xl text-xs shadow-xl relative mx-4">
-                          {service.materialsUsed && (
-                            <div className="mb-2">
-                              <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1">Materials:</span>
-                              <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
-                                <Markdown>{service.materialsUsed}</Markdown>
-                              </div>
-                            </div>
-                          )}
-                          {service.stylingNotes && (
-                            <div>
-                              <span className="font-medium text-[#D4AF37] uppercase tracking-widest text-[10px] block mb-1 mt-2">Styling & Suitability:</span>
-                              <div className="text-white/90 prose prose-sm prose-invert max-w-none prose-p:my-0 prose-ul:my-0 prose-li:my-0">
-                                <Markdown>{service.stylingNotes}</Markdown>
-                              </div>
-                            </div>
-                          )}
-                          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-[#2C2C2C] rotate-45"></div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </Reorder.Item>
+              <DraggableServiceItem
+                key={service.id}
+                service={service}
+                idx={idx}
+                isEditing={isEditing}
+                editServices={editServices}
+                setEditServices={setEditServices}
+                navigate={navigate}
+                artist={artist}
+              />
             ))}
           </Reorder.Group>
         </div>
